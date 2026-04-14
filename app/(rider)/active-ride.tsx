@@ -1,45 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
 import { Share, StyleSheet, View } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Button, Card, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
-import { SabayMap, type LatLng } from '../../components/SabayMap';
+import { SabayMap } from '../../components/SabayMap';
 import { PassengerBadge } from '../../components/PassengerBadge';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
-import { buildPolyline, interpolateAlongPath, shortToken } from '../../utils/rideSimulation';
+import { useRideSimulation } from '../../hooks/useRideSimulation';
+import { shortToken } from '../../utils/rideSimulation';
 import { formatPHP } from '../../utils/pricing';
 import { colors, spacing } from '../../constants/theme';
 
-const SIMULATION_DURATION_MS = 90_000;
-
 export default function RiderActiveRide() {
   const { activeRide, dispatch } = useApp();
-
-  const polyline = useMemo(() => (activeRide ? buildPolyline(activeRide.id) : []), [activeRide]);
-  const startedAt = useRef<number>(Date.now());
-  const [position, setPosition] = useState<LatLng | null>(polyline[0] ?? null);
-  const [etaLabel, setEtaLabel] = useState<string>('--');
-
-  useEffect(() => {
-    if (!activeRide) return;
-    startedAt.current = Date.now();
-    setPosition(polyline[0] ?? null);
-    const arrivalTime = activeRide.departureTime + activeRide.durationMin * 60_000;
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - startedAt.current;
-      const progress = Math.min(1, elapsed / SIMULATION_DURATION_MS);
-      setPosition(interpolateAlongPath(polyline, progress));
-      const remainingMs = arrivalTime - Date.now();
-      if (remainingMs <= 0) {
-        setEtaLabel('Arriving now');
-      } else {
-        const mins = Math.ceil(remainingMs / 60_000);
-        setEtaLabel(`${mins} min`);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [activeRide, polyline]);
+  const { polyline, position, etaLabel } = useRideSimulation(activeRide);
 
   if (!activeRide) {
     return (
@@ -63,8 +37,9 @@ export default function RiderActiveRide() {
   };
 
   const onCancel = () => {
-    dispatch({ type: 'END_RIDE', rideId: activeRide.id });
-    router.replace('/(rider)/ride-complete');
+    const rideId = activeRide.id;
+    dispatch({ type: 'END_RIDE', rideId });
+    router.replace({ pathname: '/(rider)/ride-complete', params: { id: rideId } });
   };
 
   return (
