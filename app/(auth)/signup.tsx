@@ -48,6 +48,10 @@ export default function Signup() {
         phone: phone.trim() || undefined,
       },
     });
+    dispatch({
+      type: 'SET_ROLE',
+      role: nextHref === '/verify-rider' ? 'rider' : 'driver',
+    });
     router.push(nextHref);
   };
 
