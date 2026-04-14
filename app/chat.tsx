@@ -9,92 +9,166 @@ import {
   View,
 } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { Text } from 'react-native-paper';
+import { Button, Dialog, Portal, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { Avatar } from '../components/Avatar';
 import { colors, spacing } from '../constants/theme';
-import type { ChatMessage, DriverStatus } from '../utils/types';
+import type { ChatMessage, DriverStatus, Passenger } from '../utils/types';
 
-const STATUS_COPY: Record<DriverStatus, { label: string; color: string; icon: 'clock-outline' | 'car' | 'map-marker-check' }> = {
+type StatusCopy = { label: string; color: string; icon: 'clock-outline' | 'car' | 'map-marker-check' | 'map-marker-radius' };
+
+const STATUS_COPY: Record<DriverStatus, StatusCopy> = {
   preparing: { label: 'Preparing to leave', color: colors.muted, icon: 'clock-outline' },
-  enroute: { label: 'On the way', color: colors.primary, icon: 'car' },
+  to_pickup: { label: 'Heading to pickup', color: colors.primary, icon: 'car' },
+  at_pickup: { label: 'Arrived at pickup', color: colors.warning, icon: 'map-marker-radius' },
+  to_destination: { label: 'En route', color: colors.primary, icon: 'car' },
   arrived: { label: 'Arrived', color: colors.success, icon: 'map-marker-check' },
 };
 
-// Demo auto-advance timings: driver sends an initial greeting, then starts the
-// trip after this delay so a single-device demo doesn't require manual role
-// switching to see the map animation.
 const AUTO_GREETING_DELAY_MS = 1500;
-const AUTO_START_DELAY_MS = 5000;
+const AUTO_JOIN_DELAY_MS = 3000;
+const AUTO_JOIN_MESSAGE_DELAY_MS = 4200;
+const AUTO_START_DELAY_MS = 6500;
+
+const AUTO_PASSENGERS: Array<{
+  userId: string;
+  firstName: string;
+  profilePicUri: string;
+  message: string;
+}> = [
+  {
+    userId: 'u_rico',
+    firstName: 'Rico',
+    profilePicUri:
+      'https://ui-avatars.com/api/?name=Rico&background=7C3AED&color=fff&bold=true&size=256',
+    message: 'Hey! I just joined. Thanks for the ride.',
+  },
+];
 
 export default function Chat() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state, dispatch, currentUser } = useApp();
   const ride = state.rides.find((r) => r.id === id);
+  const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState('');
+  const [leaveOpen, setLeaveOpen] = useState(false);
   const listRef = useRef<FlatList<ChatMessage>>(null);
-  const autoGreetedRef = useRef(false);
-  const autoStartedRef = useRef(false);
 
   const isDriver = useMemo(
     () => !!ride && ride.driverId === currentUser.id,
     [ride, currentUser.id],
   );
 
-  // Demo auto-advance: if the user is viewing as a rider and the ride has at
-  // least one passenger, simulate the driver replying and starting the trip.
+  const canLeave = ride?.driverStatus === 'preparing' && !isDriver;
+  const chatLocked = ride?.driverStatus === 'to_destination' || ride?.driverStatus === 'arrived';
+
   useEffect(() => {
     if (!ride) return;
     if (isDriver) return;
     if (ride.driverStatus !== 'preparing') return;
     if (ride.passengers.length === 0) return;
 
-    let greetTimer: ReturnType<typeof setTimeout> | undefined;
-    let startTimer: ReturnType<typeof setTimeout> | undefined;
+    const rideId = ride.id;
+    const driverId = ride.driverId;
+    const driverFirstName = ride.driverFirstName;
+    const driverProfilePicUri = ride.driverProfilePicUri;
+    const canAutoJoin = ride.totalSeats - ride.passengers.length > 0;
+    const timers: Array<ReturnType<typeof setTimeout>> = [];
 
-    if (!autoGreetedRef.current) {
-      autoGreetedRef.current = true;
-      greetTimer = setTimeout(() => {
+    timers.push(
+      setTimeout(() => {
         dispatch({
           type: 'SEND_MESSAGE',
-          rideId: ride.id,
+          rideId,
           message: {
-            id: `m_auto_${Date.now()}`,
-            senderId: ride.driverId,
-            senderFirstName: ride.driverFirstName,
-            senderProfilePicUri: ride.driverProfilePicUri,
+            id: `m_auto_greet_${Date.now()}`,
+            senderId: driverId,
+            senderFirstName: driverFirstName,
+            senderProfilePicUri: driverProfilePicUri,
             text: "Hey! I'll be heading out in a bit. See you at the pickup 👋",
             sentAt: Date.now(),
           },
         });
-      }, AUTO_GREETING_DELAY_MS);
+      }, AUTO_GREETING_DELAY_MS),
+    );
+
+    if (canAutoJoin) {
+      const joiner = AUTO_PASSENGERS[0];
+      timers.push(
+        setTimeout(() => {
+          const newPassenger: Passenger = {
+            id: `p_auto_${Date.now()}`,
+            userId: joiner.userId,
+            firstName: joiner.firstName,
+            verified: true,
+            status: 'waiting',
+            joinedAt: Date.now(),
+            profilePicUri: joiner.profilePicUri,
+          };
+          dispatch({ type: 'JOIN_RIDE', rideId, passenger: newPassenger });
+          dispatch({
+            type: 'SEND_MESSAGE',
+            rideId,
+            message: {
+              id: `m_sys_join_${Date.now()}`,
+              senderId: 'system',
+              senderFirstName: 'System',
+              text: `${joiner.firstName} joined the ride`,
+              sentAt: Date.now(),
+              isSystem: true,
+            },
+          });
+        }, AUTO_JOIN_DELAY_MS),
+      );
+      timers.push(
+        setTimeout(() => {
+          dispatch({
+            type: 'SEND_MESSAGE',
+            rideId,
+            message: {
+              id: `m_auto_join_msg_${Date.now()}`,
+              senderId: joiner.userId,
+              senderFirstName: joiner.firstName,
+              senderProfilePicUri: joiner.profilePicUri,
+              text: joiner.message,
+              sentAt: Date.now(),
+            },
+          });
+        }, AUTO_JOIN_MESSAGE_DELAY_MS),
+      );
     }
 
-    if (!autoStartedRef.current) {
-      autoStartedRef.current = true;
-      startTimer = setTimeout(() => {
+    timers.push(
+      setTimeout(() => {
         dispatch({
           type: 'SEND_MESSAGE',
-          rideId: ride.id,
+          rideId,
           message: {
             id: `m_auto_start_${Date.now()}`,
-            senderId: ride.driverId,
-            senderFirstName: ride.driverFirstName,
-            senderProfilePicUri: ride.driverProfilePicUri,
-            text: "On my way now 🚗",
+            senderId: driverId,
+            senderFirstName: driverFirstName,
+            senderProfilePicUri: driverProfilePicUri,
+            text: 'On my way now 🚗',
             sentAt: Date.now(),
           },
         });
-        dispatch({ type: 'SET_DRIVER_STATUS', rideId: ride.id, status: 'enroute' });
-      }, AUTO_START_DELAY_MS);
-    }
+        dispatch({ type: 'SET_DRIVER_STATUS', rideId, status: 'to_pickup' });
+      }, AUTO_START_DELAY_MS),
+    );
 
     return () => {
-      if (greetTimer) clearTimeout(greetTimer);
-      if (startTimer) clearTimeout(startTimer);
+      timers.forEach(clearTimeout);
     };
-  }, [ride?.id, ride?.driverStatus, ride?.passengers.length, isDriver]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ride?.id, isDriver]);
+
+  useEffect(() => {
+    if (chatLocked && ride) {
+      router.replace('/(rider)/active-ride');
+    }
+  }, [chatLocked, ride]);
 
   if (!ride) {
     return (
@@ -105,34 +179,55 @@ export default function Chat() {
     );
   }
 
-  const statusCopy = STATUS_COPY[ride.driverStatus];
+  const statusCopy = STATUS_COPY[ride.driverStatus] ?? STATUS_COPY.preparing;
 
   const onSend = () => {
     const text = draft.trim();
     if (!text) return;
-    const message: ChatMessage = {
-      id: `m_${Date.now()}`,
-      senderId: currentUser.id,
-      senderFirstName: currentUser.firstName,
-      senderProfilePicUri: currentUser.profilePicUri,
-      text,
-      sentAt: Date.now(),
-    };
-    dispatch({ type: 'SEND_MESSAGE', rideId: ride.id, message });
+    dispatch({
+      type: 'SEND_MESSAGE',
+      rideId: ride.id,
+      message: {
+        id: `m_${Date.now()}`,
+        senderId: currentUser.id,
+        senderFirstName: currentUser.firstName,
+        senderProfilePicUri: currentUser.profilePicUri,
+        text,
+        sentAt: Date.now(),
+      },
+    });
     setDraft('');
     setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
   };
 
   const onStartTrip = () => {
-    dispatch({ type: 'SET_DRIVER_STATUS', rideId: ride.id, status: 'enroute' });
+    dispatch({ type: 'SET_DRIVER_STATUS', rideId: ride.id, status: 'to_pickup' });
   };
 
   const onOpenTracking = () => {
     if (isDriver) {
-      router.push({ pathname: '/(driver)/active-ride', params: { id: ride.id } });
+      router.replace({ pathname: '/(driver)/active-ride', params: { id: ride.id } });
     } else {
-      router.push('/(rider)/active-ride');
+      router.replace('/(rider)/active-ride');
     }
+  };
+
+  const confirmLeave = () => {
+    dispatch({
+      type: 'SEND_MESSAGE',
+      rideId: ride.id,
+      message: {
+        id: `m_sys_leave_${Date.now()}`,
+        senderId: 'system',
+        senderFirstName: 'System',
+        text: `${currentUser.firstName} left the ride`,
+        sentAt: Date.now(),
+        isSystem: true,
+      },
+    });
+    dispatch({ type: 'LEAVE_RIDE', rideId: ride.id, userId: currentUser.id });
+    setLeaveOpen(false);
+    router.replace('/(tabs)');
   };
 
   const headline = isDriver
@@ -140,6 +235,8 @@ export default function Chat() {
       ? 'Waiting for riders'
       : `${ride.passengers.length} rider${ride.passengers.length === 1 ? '' : 's'} joined`
     : ride.driverFirstName;
+
+  const showEnrouteCta = ride.driverStatus === 'to_pickup' || ride.driverStatus === 'at_pickup';
 
   return (
     <>
@@ -171,9 +268,16 @@ export default function Chat() {
             firstName={isDriver ? 'Group' : ride.driverFirstName}
             size={36}
           />
-          <Text variant="titleMedium" style={styles.headline}>
-            {headline}
-          </Text>
+          <View style={{ flex: 1 }}>
+            <Text variant="titleMedium" style={styles.headline}>
+              {headline}
+            </Text>
+          </View>
+          {canLeave ? (
+            <Button mode="text" compact onPress={() => setLeaveOpen(true)}>
+              Leave
+            </Button>
+          ) : null}
         </View>
 
         <FlatList
@@ -189,24 +293,33 @@ export default function Chat() {
               </Text>
             </View>
           }
-          renderItem={({ item }) => (
-            <MessageRow message={item} mine={item.senderId === currentUser.id} />
-          )}
+          renderItem={({ item }) =>
+            item.isSystem ? (
+              <SystemPill message={item} />
+            ) : (
+              <MessageRow message={item} mine={item.senderId === currentUser.id} />
+            )
+          }
         />
 
-        {ride.driverStatus === 'enroute' ? (
+        {showEnrouteCta ? (
           <Pressable style={styles.ctaBanner} onPress={onOpenTracking}>
             <MaterialCommunityIcons name="map-marker-radius" size={18} color="#FFFFFF" />
             <Text style={styles.ctaText}>Open live tracking</Text>
           </Pressable>
-        ) : isDriver ? (
+        ) : isDriver && ride.driverStatus === 'preparing' ? (
           <Pressable style={styles.ctaBanner} onPress={onStartTrip}>
             <MaterialCommunityIcons name="car" size={18} color="#FFFFFF" />
             <Text style={styles.ctaText}>I'm on my way</Text>
           </Pressable>
         ) : null}
 
-        <View style={styles.inputRow}>
+        <View
+          style={[
+            styles.inputRow,
+            { paddingBottom: Math.max(spacing.sm, insets.bottom + spacing.xs) },
+          ]}
+        >
           <RNTextInput
             value={draft}
             onChangeText={setDraft}
@@ -224,7 +337,37 @@ export default function Chat() {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+
+      <Portal>
+        <Dialog visible={leaveOpen} onDismiss={() => setLeaveOpen(false)}>
+          <Dialog.Title>Leave this ride?</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              You can leave freely while the driver hasn't left yet. Once they're on the
+              way, you're committed to the trip.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setLeaveOpen(false)}>Stay</Button>
+            <Button mode="contained" onPress={confirmLeave}>
+              Leave
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </>
+  );
+}
+
+function SystemPill({ message }: { message: ChatMessage }) {
+  return (
+    <View style={styles.systemRow}>
+      <View style={styles.systemPill}>
+        <Text variant="labelSmall" style={styles.systemText}>
+          {message.text}
+        </Text>
+      </View>
+    </View>
   );
 }
 
@@ -236,11 +379,7 @@ function MessageRow({ message, mine }: { message: ChatMessage; mine: boolean }) 
   return (
     <View style={[styles.messageRow, mine ? styles.messageRowMine : styles.messageRowOther]}>
       {!mine ? (
-        <Avatar
-          uri={message.senderProfilePicUri}
-          firstName={message.senderFirstName}
-          size={24}
-        />
+        <Avatar uri={message.senderProfilePicUri} firstName={message.senderFirstName} size={24} />
       ) : null}
       <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleOther]}>
         {!mine ? (
@@ -292,6 +431,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: spacing.xl,
+  },
+  systemRow: {
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+  },
+  systemPill: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+  },
+  systemText: {
+    color: colors.muted,
   },
   messageRow: {
     flexDirection: 'row',
