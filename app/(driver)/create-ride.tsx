@@ -10,7 +10,42 @@ import { aggregateGasPrices } from '../../utils/gasPrice';
 import { estimateDistance } from '../../utils/distance';
 import { DEFAULT_FUEL_EFFICIENCY_KM_PER_L } from '../../constants/config';
 import { colors, spacing } from '../../constants/theme';
-import type { Ride } from '../../utils/types';
+import type { Passenger, Ride } from '../../utils/types';
+
+type AutoRider = {
+  userId: string;
+  firstName: string;
+  verified: boolean;
+  profilePicUri?: string;
+  joinDelayMs: number;
+  messageDelayMs: number;
+  message: string;
+};
+
+// Populated after a driver posts a ride so a single-device demo has real
+// passengers showing up and chatting without a second device.
+const DEFAULT_AUTO_RIDERS: AutoRider[] = [
+  {
+    userId: 'u_bea',
+    firstName: 'Bea',
+    verified: true,
+    profilePicUri:
+      'https://ui-avatars.com/api/?name=Bea&background=059669&color=fff&bold=true&size=256',
+    joinDelayMs: 2500,
+    messageDelayMs: 4000,
+    message: 'Nandito po kami sa pickup point kuya 🙏',
+  },
+  {
+    userId: 'u_rico',
+    firstName: 'Rico',
+    verified: true,
+    profilePicUri:
+      'https://ui-avatars.com/api/?name=Rico&background=7C3AED&color=fff&bold=true&size=256',
+    joinDelayMs: 5000,
+    messageDelayMs: 6500,
+    message: 'Sabay na po ako sakay 😊',
+  },
+];
 
 export default function CreateRide() {
   const { state, dispatch, currentUser } = useApp();
@@ -22,6 +57,7 @@ export default function CreateRide() {
   const [departureType, setDepartureType] = useState<'now' | 'scheduled'>('now');
   const [scheduledAt, setScheduledAt] = useState<Date>(() => new Date(Date.now() + 60 * 60 * 1000));
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [breakdownOpen, setBreakdownOpen] = useState(false);
   const fulfillingRequestId = params.requestId;
 
   const fuelPrice = useMemo(
@@ -87,9 +123,77 @@ export default function CreateRide() {
       createdAt: now,
     };
     dispatch({ type: 'ADD_RIDE', ride });
-    if (fulfillingRequestId) {
-      dispatch({ type: 'FULFILL_REQUEST', requestId: fulfillingRequestId, rideId: ride.id });
+
+    const fulfilledRequest = fulfillingRequestId
+      ? state.rideRequests.find((r) => r.id === fulfillingRequestId)
+      : undefined;
+    if (fulfilledRequest) {
+      dispatch({ type: 'FULFILL_REQUEST', requestId: fulfilledRequest.id, rideId: ride.id });
     }
+
+    // First joiner is the requester if we're fulfilling, otherwise Bea.
+    // Second joiner is always Rico so single-device demos always end up
+    // with two real-feeling people chatting in the ride.
+    const firstJoiner: AutoRider = fulfilledRequest
+      ? {
+          userId: fulfilledRequest.riderId,
+          firstName: fulfilledRequest.riderFirstName,
+          verified: fulfilledRequest.riderVerified,
+          profilePicUri: fulfilledRequest.riderProfilePicUri,
+          joinDelayMs: DEFAULT_AUTO_RIDERS[0].joinDelayMs,
+          messageDelayMs: DEFAULT_AUTO_RIDERS[0].messageDelayMs,
+          message: `Salamat sa ride kuya! Nandito po ako sa ${ride.from}.`,
+        }
+      : DEFAULT_AUTO_RIDERS[0];
+    const secondJoiner = DEFAULT_AUTO_RIDERS[1];
+
+    const queue: AutoRider[] = [firstJoiner];
+    if (ride.totalSeats >= 2 && secondJoiner.userId !== firstJoiner.userId) {
+      queue.push(secondJoiner);
+    }
+
+    for (const rider of queue) {
+      setTimeout(() => {
+        const passenger: Passenger = {
+          id: `p_auto_${rider.userId}_${Date.now()}`,
+          userId: rider.userId,
+          firstName: rider.firstName,
+          verified: rider.verified,
+          status: 'waiting',
+          joinedAt: Date.now(),
+          profilePicUri: rider.profilePicUri,
+        };
+        dispatch({ type: 'JOIN_RIDE', rideId: ride.id, passenger });
+        dispatch({
+          type: 'SEND_MESSAGE',
+          rideId: ride.id,
+          message: {
+            id: `m_sys_join_${rider.userId}_${Date.now()}`,
+            senderId: 'system',
+            senderFirstName: 'System',
+            text: `${rider.firstName} joined the ride`,
+            sentAt: Date.now(),
+            isSystem: true,
+          },
+        });
+      }, rider.joinDelayMs);
+
+      setTimeout(() => {
+        dispatch({
+          type: 'SEND_MESSAGE',
+          rideId: ride.id,
+          message: {
+            id: `m_auto_msg_${rider.userId}_${Date.now()}`,
+            senderId: rider.userId,
+            senderFirstName: rider.firstName,
+            senderProfilePicUri: rider.profilePicUri,
+            text: rider.message,
+            sentAt: Date.now(),
+          },
+        });
+      }, rider.messageDelayMs);
+    }
+
     router.back();
   };
 
@@ -194,7 +298,19 @@ export default function CreateRide() {
             </Text>
           )}
 
-          {breakdown ? <PriceBreakdown breakdown={breakdown} /> : null}
+          {breakdown ? (
+            <View style={styles.breakdown}>
+              <Button
+                mode="text"
+                icon={breakdownOpen ? 'chevron-up' : 'chevron-down'}
+                contentStyle={{ flexDirection: 'row-reverse' }}
+                onPress={() => setBreakdownOpen((v) => !v)}
+              >
+                {breakdownOpen ? 'Hide fare breakdown' : 'Show fare breakdown'}
+              </Button>
+              {breakdownOpen ? <PriceBreakdown breakdown={breakdown} /> : null}
+            </View>
+          ) : null}
 
           <Button mode="contained" disabled={!canSubmit} onPress={onPost} style={styles.submit}>
             Post Ride
@@ -234,5 +350,8 @@ const styles = StyleSheet.create({
   },
   submit: {
     marginTop: spacing.md,
+  },
+  breakdown: {
+    gap: spacing.sm,
   },
 });

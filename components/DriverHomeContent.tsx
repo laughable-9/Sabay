@@ -17,7 +17,12 @@ export function DriverHomeContent() {
   const myRides = useMemo(
     () =>
       state.rides
-        .filter((r) => r.driverId === currentUser.id && r.status !== 'completed')
+        .filter(
+          (r) =>
+            r.driverId === currentUser.id &&
+            r.status !== 'completed' &&
+            r.status !== 'cancelled',
+        )
         .sort((a, b) => a.departureTime - b.departureTime),
     [state.rides, currentUser.id],
   );
