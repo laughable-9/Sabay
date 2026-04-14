@@ -53,14 +53,13 @@ export default function DriverRideComplete() {
         <Card style={styles.card}>
           <Card.Content>
             <Text variant="labelLarge" style={styles.muted}>
-              Your earnings
+              Fuel cost covered
             </Text>
             <Text variant="displaySmall" style={styles.earnings}>
               {formatPHP(earnings.net)}
             </Text>
             <Text variant="bodySmall" style={styles.muted}>
-              {earnings.paidCount} rider{earnings.paidCount === 1 ? '' : 's'} · Gross{' '}
-              {formatPHP(earnings.gross)} − Platform {formatPHP(earnings.platformCut)}
+              {earnings.paidCount} rider{earnings.paidCount === 1 ? '' : 's'} chipped in to split your fuel cost.
             </Text>
           </Card.Content>
         </Card>
