@@ -95,7 +95,7 @@ export const MOCK_USERS: User[] = [
   },
 ];
 
-const FUEL_PRICE_SEED = 65.5;
+const FUEL_PRICE_SEED = 100.5;
 
 function mkRide(
   id: string,
@@ -164,13 +164,14 @@ export const MOCK_RIDES: Ride[] = [
 function mkSubmission(
   id: string,
   offsetFromNowMs: number,
+  fuelType: 'unleaded' | 'diesel' | 'premium',
   price: number,
   submittedByUserId: string,
   station?: string,
 ): GasPriceSubmission {
   return {
     id,
-    fuelType: 'unleaded',
+    fuelType,
     pricePerLiter: price,
     stationName: station,
     submittedAt: Date.now() - offsetFromNowMs,
@@ -179,23 +180,29 @@ function mkSubmission(
   };
 }
 
+// Seed values approximate April 2026 DOE weekly ranges:
+//   Unleaded 91: ₱94.57 – ₱106.90/L
+//   Premium 95:  ₱94.07 – ₱107.40/L
+//   Diesel:      ₱128.01 – ₱132.20/L
 export const MOCK_GAS_PRICES: GasPriceSubmission[] = [
-  mkSubmission('g1', 2 * HOUR, 65.5, 'u_maria', 'Shell Session Road'),
-  mkSubmission('g2', 5 * HOUR, 65.8, 'u_josh', 'Petron Marcos Highway'),
-  mkSubmission('g3', 10 * HOUR, 65.4, 'u_ana'),
-  mkSubmission('g4', 14 * HOUR, 65.6, 'u_rico', 'Caltex Magsaysay'),
-  mkSubmission('g5', 20 * HOUR, 65.3, 'u_bea'),
-  mkSubmission('g6', 1 * DAY, 65.7, 'u_maria', 'Shell La Trinidad'),
-  mkSubmission('g7', 1.5 * DAY, 65.5, 'u_josh'),
-  mkSubmission('g8', 2 * DAY, 65.2, 'u_ana', 'Petron Marcos Highway'),
-  mkSubmission('g9', 2.5 * DAY, 65.4, 'u_rico'),
-  mkSubmission('g10', 3 * DAY, 65.9, 'u_bea', 'Caltex Magsaysay'),
-  mkSubmission('g11', 3.5 * DAY, 65.1, 'u_maria'),
-  mkSubmission('g12', 4 * DAY, 65.0, 'u_josh', 'Shell Session Road'),
-  mkSubmission('g13', 4.5 * DAY, 65.3, 'u_ana'),
-  mkSubmission('g14', 5 * DAY, 64.9, 'u_rico', 'Petron Marcos Highway'),
-  mkSubmission('g15', 5.5 * DAY, 64.8, 'u_bea'),
-  mkSubmission('g16', 6 * DAY, 64.7, 'u_maria', 'Caltex Magsaysay'),
-  mkSubmission('g17', 6.5 * DAY, 64.9, 'u_josh'),
-  mkSubmission('g18', 7 * DAY, 65.0, 'u_ana', 'Shell La Trinidad'),
+  mkSubmission('g1', 2 * HOUR, 'unleaded', 100.2, 'u_maria', 'Shell Session Road'),
+  mkSubmission('g2', 5 * HOUR, 'unleaded', 101.5, 'u_josh', 'Petron Marcos Highway'),
+  mkSubmission('g3', 10 * HOUR, 'unleaded', 99.8, 'u_ana'),
+  mkSubmission('g4', 14 * HOUR, 'unleaded', 102.4, 'u_rico', 'Caltex Magsaysay'),
+  mkSubmission('g5', 20 * HOUR, 'unleaded', 100.0, 'u_bea'),
+  mkSubmission('g6', 1 * DAY, 'unleaded', 98.9, 'u_maria', 'Shell La Trinidad'),
+  mkSubmission('g7', 1.5 * DAY, 'unleaded', 101.0, 'u_josh'),
+  mkSubmission('g8', 2.5 * DAY, 'unleaded', 99.2, 'u_ana', 'Petron Marcos Highway'),
+
+  mkSubmission('g9', 3 * HOUR, 'premium', 103.5, 'u_maria', 'Shell Session Road'),
+  mkSubmission('g10', 8 * HOUR, 'premium', 104.2, 'u_bea', 'Caltex Magsaysay'),
+  mkSubmission('g11', 16 * HOUR, 'premium', 102.8, 'u_josh'),
+  mkSubmission('g12', 1.2 * DAY, 'premium', 105.0, 'u_ana', 'Shell La Trinidad'),
+  mkSubmission('g13', 2 * DAY, 'premium', 103.0, 'u_rico', 'Petron Marcos Highway'),
+
+  mkSubmission('g14', 4 * HOUR, 'diesel', 130.0, 'u_ana', 'Petron Marcos Highway'),
+  mkSubmission('g15', 12 * HOUR, 'diesel', 129.5, 'u_maria'),
+  mkSubmission('g16', 18 * HOUR, 'diesel', 131.2, 'u_josh', 'Caltex Magsaysay'),
+  mkSubmission('g17', 1.5 * DAY, 'diesel', 128.8, 'u_rico', 'Shell Session Road'),
+  mkSubmission('g18', 3 * DAY, 'diesel', 130.5, 'u_bea', 'Shell La Trinidad'),
 ];
