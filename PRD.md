@@ -1,4 +1,4 @@
-# [APP NAME] - Product Requirements Document v2
+# SABAY - Product Requirements Document v2
 
 **A Carpool Platform for Baguio City Commuters**
 React Native + Expo | iOS Demo Build
@@ -11,7 +11,7 @@ STS 1 Final Project | 2nd Semester AY 2025-2026
 
 ### 1.1 What Is This App
 
-[APP NAME] is a mobile carpool platform built specifically for Baguio City and Benguet. It connects drivers heading along common routes with riders going the same way, splitting the cost of fuel fairly using a transparent, crowdsourced pricing model. Unlike ride-hailing apps like Grab, this is peer-to-peer carpooling where drivers are regular commuters (not for-hire), and costs are shared rather than charged as a commercial service.
+SABAY is a mobile carpool platform built specifically for Baguio City and Benguet. It connects drivers heading along common routes with riders going the same way, splitting the cost of fuel fairly using a transparent, crowdsourced pricing model. Unlike ride-hailing apps like Grab, this is peer-to-peer carpooling where drivers are regular commuters (not for-hire), and costs are shared rather than charged as a commercial service.
 
 ### 1.2 The Problem
 
