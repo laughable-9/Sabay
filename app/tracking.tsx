@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
   },
   bannerText: {
     color: colors.primary,
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   infoCard: {
     padding: spacing.lg,
     gap: spacing.xs,
-    backgroundColor: colors.background,
+    backgroundColor: colors.card,
     borderTopWidth: 1,
     borderTopColor: colors.surface,
   },

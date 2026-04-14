@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   resultBox: {
     marginTop: spacing.md,
     padding: spacing.md,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
     borderRadius: 12,
   },
 });
