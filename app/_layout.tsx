@@ -11,7 +11,16 @@ export default function RootLayout() {
       <PaperProvider theme={theme}>
         <AppProvider>
           <StatusBar style="dark" />
-          <Stack screenOptions={{ headerShown: true }} />
+          <Stack
+            screenOptions={{
+              headerShown: true,
+              headerBackTitle: '',
+              headerBackButtonDisplayMode: 'minimal',
+              headerShadowVisible: false,
+              headerTitleStyle: { fontWeight: '700' },
+              contentStyle: { backgroundColor: theme.colors.background },
+            }}
+          />
         </AppProvider>
       </PaperProvider>
     </SafeAreaProvider>
