@@ -25,19 +25,23 @@ export type SimulatedRide = {
 export function useRideSimulation(ride: Ride | null): SimulatedRide {
   const { dispatch } = useApp();
 
-  const pickupCoord = useMemo(() => (ride ? getCoord(ride.from) : null), [ride]);
-  const destinationCoord = useMemo(() => (ride ? getCoord(ride.to) : null), [ride]);
+  // Memo on the stable identity bits of the ride (id + endpoints) rather
+  // than the whole object — otherwise every unrelated dispatch (chat
+  // message, passenger join, etc.) returns a new `ride` reference, which
+  // recomputes the polylines and restarts the animation mid-trip.
+  const pickupCoord = useMemo(() => (ride ? getCoord(ride.from) : null), [ride?.from]);
+  const destinationCoord = useMemo(() => (ride ? getCoord(ride.to) : null), [ride?.to]);
 
   const pickupPolyline = useMemo(() => {
     if (!ride || !pickupCoord) return [];
     const start = driverApproachStart(ride.id, pickupCoord);
     return buildPolylineBetween(ride.id + 'pickup', start, pickupCoord);
-  }, [ride, pickupCoord]);
+  }, [ride?.id, pickupCoord]);
 
   const tripPolyline = useMemo(() => {
     if (!ride || !pickupCoord || !destinationCoord) return [];
     return buildPolylineBetween(ride.id + 'trip', pickupCoord, destinationCoord);
-  }, [ride, pickupCoord, destinationCoord]);
+  }, [ride?.id, pickupCoord, destinationCoord]);
 
   const phase: 'pickup' | 'destination' | 'idle' = useMemo(() => {
     if (!ride) return 'idle';
@@ -64,6 +68,19 @@ export function useRideSimulation(ride: Ride | null): SimulatedRide {
 
   useEffect(() => {
     if (!ride || phase === 'idle') return;
+
+    // When the driver is parked at the pickup waiting for rider
+    // confirmation, freeze the pin at the end of the approach polyline
+    // instead of replaying the animation. Without this guard the effect
+    // re-runs on every driverStatus change and loops the pickup approach.
+    if (ride.driverStatus === 'at_pickup') {
+      const last = activePolyline[activePolyline.length - 1];
+      if (last) setPosition(last);
+      setProgress(1);
+      setEtaLabel('Arrived');
+      return;
+    }
+
     phaseStartedAt.current = Date.now();
     hasTransitionedThisPhase.current = false;
     setPosition(activePolyline[0] ?? null);

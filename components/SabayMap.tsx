@@ -16,10 +16,13 @@ export function SabayMap({ driverPosition, polyline, region, showEndpoints = tru
   const start = polyline && polyline.length > 0 ? polyline[0] : undefined;
   const end = polyline && polyline.length > 1 ? polyline[polyline.length - 1] : undefined;
 
+  // Controlled region so the map re-centers when we switch phases (pickup
+  // approach → full trip). initialRegion only applies on mount which left
+  // phase 2 showing the phase 1 viewport with the new polyline off-screen.
   return (
     <MapView
       style={styles.map}
-      initialRegion={region ?? BAGUIO_CENTER}
+      region={region ?? BAGUIO_CENTER}
       showsUserLocation={false}
       loadingEnabled
     >

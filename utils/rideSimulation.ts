@@ -19,8 +19,24 @@ export function buildPolylineBetween(
 ): LatLng[] {
   const seed = hash(seedId);
 
-  const dLat = end.latitude - start.latitude;
-  const dLng = end.longitude - start.longitude;
+  // If the caller passed identical (or near-identical) coords — usually
+  // because the user typed an unknown origin/destination and both fell
+  // back to BAGUIO_CENTER via getCoord — synthesize a small displacement
+  // so the polyline has visible length and the pin has somewhere to move.
+  const EPSILON = 1e-6;
+  let resolvedEnd = end;
+  const initialDistance = Math.hypot(end.latitude - start.latitude, end.longitude - start.longitude);
+  if (initialDistance < EPSILON) {
+    const angle = ((seed % 360) * Math.PI) / 180;
+    const r = 0.008;
+    resolvedEnd = {
+      latitude: start.latitude + r * Math.cos(angle),
+      longitude: start.longitude + r * Math.sin(angle),
+    };
+  }
+
+  const dLat = resolvedEnd.latitude - start.latitude;
+  const dLng = resolvedEnd.longitude - start.longitude;
   const distance = Math.hypot(dLat, dLng);
   const amplitude = distance * 0.08;
 
