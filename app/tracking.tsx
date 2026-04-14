@@ -5,6 +5,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { SabayMap } from '../components/SabayMap';
+import { Avatar } from '../components/Avatar';
+import { VerifiedBadge } from '../components/VerifiedBadge';
 import { useRideSimulation } from '../hooks/useRideSimulation';
 import { colors, spacing } from '../constants/theme';
 
@@ -32,7 +34,7 @@ export default function Tracking() {
     <>
       <Stack.Screen options={{ title: 'Shared Ride', headerShown: false }} />
       <View style={styles.container}>
-        <View style={styles.banner}>
+        <View style={[styles.banner, { paddingTop: insets.top + spacing.sm }]}>
           <MaterialCommunityIcons name="shield-check" size={16} color={colors.primary} />
           <Text variant="labelSmall" style={styles.bannerText}>
             Live location shared via sabay.ph
@@ -53,10 +55,36 @@ export default function Tracking() {
             { paddingBottom: Math.max(spacing.lg, insets.bottom + spacing.sm) },
           ]}
         >
-          <Text variant="labelSmall" style={styles.muted}>
-            {activeRide.driverFirstName} is driving
-          </Text>
-          <Text variant="titleMedium">
+          <View style={styles.driverRow}>
+            <Avatar
+              uri={activeRide.driverProfilePicUri}
+              firstName={activeRide.driverFirstName}
+              size={44}
+            />
+            <View style={{ flex: 1 }}>
+              <View style={styles.driverNameRow}>
+                <Text variant="titleMedium">{activeRide.driverFirstName}</Text>
+                {activeRide.driverVerified ? <VerifiedBadge compact /> : null}
+              </View>
+              <Text variant="bodySmall" style={styles.muted}>
+                {activeRide.driverRating.toFixed(1)} ★ · driving now
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.vehicleRow}>
+            <MaterialCommunityIcons name="car-side" size={16} color={colors.muted} />
+            <Text variant="bodyMedium">
+              {activeRide.vehicle.color} {activeRide.vehicle.make} {activeRide.vehicle.model}
+            </Text>
+            <View style={styles.platePill}>
+              <Text variant="labelSmall" style={styles.plateText}>
+                {activeRide.vehicle.plateNumber}
+              </Text>
+            </View>
+          </View>
+
+          <Text variant="titleSmall" style={styles.route}>
             {activeRide.from} → {activeRide.to}
           </Text>
           <View style={styles.etaRow}>
@@ -65,7 +93,7 @@ export default function Tracking() {
               ETA {etaLabel}
             </Text>
           </View>
-          <Text variant="bodySmall" style={styles.muted}>
+          <Text variant="bodySmall" style={styles.footer}>
             Link expires when the ride ends. No app install needed.
           </Text>
         </View>
@@ -95,19 +123,52 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     padding: spacing.lg,
-    gap: spacing.xs,
+    gap: spacing.sm,
     backgroundColor: colors.card,
     borderTopWidth: 1,
     borderTopColor: colors.surface,
+  },
+  driverRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  driverNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  vehicleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    flexWrap: 'wrap',
+  },
+  platePill: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    backgroundColor: colors.surface,
+    borderRadius: 6,
+  },
+  plateText: {
+    color: colors.text,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  route: {
+    marginTop: spacing.xs,
   },
   etaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    marginTop: spacing.xs,
   },
   muted: {
     color: colors.muted,
+  },
+  footer: {
+    color: colors.muted,
+    marginTop: spacing.xs,
   },
   expired: {
     flex: 1,

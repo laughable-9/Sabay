@@ -136,7 +136,18 @@ export default function RiderActiveRide() {
                     {activeRide.driverVerified ? <VerifiedBadge compact /> : null}
                   </View>
                   <Text variant="bodySmall" style={styles.muted}>
-                    {activeRide.vehicle.make} {activeRide.vehicle.model}
+                    {activeRide.driverRating.toFixed(1)} ★
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.vehicleRow}>
+                <MaterialCommunityIcons name="car-side" size={16} color={colors.muted} />
+                <Text variant="bodyMedium">
+                  {activeRide.vehicle.color} {activeRide.vehicle.make} {activeRide.vehicle.model}
+                </Text>
+                <View style={styles.platePill}>
+                  <Text variant="labelSmall" style={styles.plateText}>
+                    {activeRide.vehicle.plateNumber}
                   </Text>
                 </View>
               </View>
@@ -250,6 +261,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+  },
+  vehicleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    flexWrap: 'wrap',
+    marginBottom: spacing.sm,
+  },
+  platePill: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    backgroundColor: colors.surface,
+    borderRadius: 6,
+  },
+  plateText: {
+    color: colors.text,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
   etaRow: {
     flexDirection: 'row',
