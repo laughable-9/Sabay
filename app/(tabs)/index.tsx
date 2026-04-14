@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { useApp } from '../../context/AppContext';
-import { Placeholder } from '../../components/Placeholder';
 import { DriverHomeContent } from '../../components/DriverHomeContent';
+import { RiderHomeContent } from '../../components/RiderHomeContent';
 
 export default function TabsHome() {
   const { state } = useApp();
@@ -18,11 +18,7 @@ export default function TabsHome() {
   return (
     <>
       <Stack.Screen options={{ title: 'Find a Ride' }} />
-      <Placeholder
-        title="Rider Home"
-        subtitle="Search for a destination to find a carpool."
-        links={[{ href: '/(rider)/home', label: 'Browse Rides' }]}
-      />
+      <RiderHomeContent />
     </>
   );
 }
