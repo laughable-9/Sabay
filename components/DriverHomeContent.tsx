@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { Button, Card, Chip, Text } from 'react-native-paper';
 import { useApp } from '../context/AppContext';
 import { formatPHP } from '../utils/pricing';
@@ -60,8 +60,12 @@ function MyRideCard({ ride }: { ride: Ride }) {
   const seatsTaken = ride.passengers.filter((p) => p.status !== 'dropped_off').length;
   const timeLabel = formatDepartureTime(ride.departureTime);
 
+  const onPress = () => {
+    router.push({ pathname: '/(driver)/active-ride', params: { id: ride.id } });
+  };
+
   return (
-    <Card style={styles.card}>
+    <Card style={styles.card} onPress={onPress}>
       <Card.Content>
         <View style={styles.cardHeader}>
           <Text variant="titleMedium">
