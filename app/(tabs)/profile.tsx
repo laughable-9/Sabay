@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
-import { Card, Chip, SegmentedButtons, Text } from 'react-native-paper';
+import { Button, Card, Chip, SegmentedButtons, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
@@ -12,7 +12,7 @@ import { colors, spacing } from '../../constants/theme';
 import type { Role } from '../../utils/types';
 
 export default function Profile() {
-  const { state, dispatch, currentUser } = useApp();
+  const { state, dispatch, currentUser, resetDemo } = useApp();
 
   const history = useMemo(
     () =>
@@ -111,6 +111,18 @@ export default function Profile() {
               );
             })
           )}
+        </View>
+
+        <View style={styles.section}>
+          <Text variant="labelLarge" style={styles.sectionLabel}>
+            Demo controls
+          </Text>
+          <Button mode="outlined" icon="restart" onPress={resetDemo}>
+            Reset demo data
+          </Button>
+          <Text variant="bodySmall" style={styles.hint}>
+            Clears saved state and re-seeds fresh rides, gas prices, and requests.
+          </Text>
         </View>
       </ScrollView>
     </>

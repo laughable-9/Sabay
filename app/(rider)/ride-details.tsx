@@ -58,7 +58,7 @@ export default function RideDetails() {
       profilePicUri: currentUser.profilePicUri,
     };
     dispatch({ type: 'JOIN_RIDE', rideId: ride.id, passenger });
-    router.replace('/(rider)/active-ride');
+    router.replace({ pathname: '/chat', params: { id: ride.id } });
   };
 
   const departure = new Date(ride.departureTime);

@@ -39,6 +39,17 @@ export type Passenger = {
 
 export type RideStatus = 'open' | 'active' | 'completed' | 'cancelled';
 
+export type DriverStatus = 'preparing' | 'enroute' | 'arrived';
+
+export type ChatMessage = {
+  id: string;
+  senderId: string;
+  senderFirstName: string;
+  senderProfilePicUri?: string;
+  text: string;
+  sentAt: number;
+};
+
 export type Ride = {
   id: string;
   driverId: string;
@@ -59,7 +70,9 @@ export type Ride = {
   fuelEfficiency: number;
   terrainMultiplier: number;
   status: RideStatus;
+  driverStatus: DriverStatus;
   passengers: Passenger[];
+  messages: ChatMessage[];
   notes?: string;
   createdAt: number;
 };
@@ -77,7 +90,6 @@ export type RideRequest = {
   distanceKm: number;
   durationMin: number;
   desiredDepartureTime: number;
-  maxFare?: number;
   notes?: string;
   status: RideRequestStatus;
   matchedRideId?: string;

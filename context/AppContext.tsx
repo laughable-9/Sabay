@@ -13,8 +13,10 @@ import {
   MOCK_USERS,
 } from '../utils/mockData';
 import { markOutliers } from '../utils/gasPrice';
-import { getJSON, setJSON } from '../utils/storage';
+import { getJSON, remove as removeJSON, setJSON } from '../utils/storage';
 import type {
+  ChatMessage,
+  DriverStatus,
   GasPriceSubmission,
   Passenger,
   Ride,
@@ -23,7 +25,7 @@ import type {
   User,
 } from '../utils/types';
 
-const STORAGE_KEY = 'sabay.appState.v4';
+const STORAGE_KEY = 'sabay.appState.v5';
 
 export type AppState = {
   users: User[];
@@ -58,7 +60,10 @@ type Action =
   | { type: 'SUBMIT_GAS_PRICE'; submission: GasPriceSubmission }
   | { type: 'POST_REQUEST'; request: RideRequest }
   | { type: 'CANCEL_REQUEST'; requestId: string }
-  | { type: 'FULFILL_REQUEST'; requestId: string; rideId: string };
+  | { type: 'FULFILL_REQUEST'; requestId: string; rideId: string }
+  | { type: 'SEND_MESSAGE'; rideId: string; message: ChatMessage }
+  | { type: 'SET_DRIVER_STATUS'; rideId: string; status: DriverStatus }
+  | { type: 'RESET_DEMO' };
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
@@ -133,6 +138,23 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, rideRequests };
     }
 
+    case 'SEND_MESSAGE': {
+      const rides = state.rides.map((r) =>
+        r.id === action.rideId ? { ...r, messages: [...r.messages, action.message] } : r,
+      );
+      return { ...state, rides };
+    }
+
+    case 'SET_DRIVER_STATUS': {
+      const rides = state.rides.map((r) =>
+        r.id === action.rideId ? { ...r, driverStatus: action.status } : r,
+      );
+      return { ...state, rides };
+    }
+
+    case 'RESET_DEMO':
+      return { ...INITIAL_STATE, hydrated: true };
+
     default:
       return state;
   }
@@ -143,6 +165,7 @@ type AppContextValue = {
   dispatch: React.Dispatch<Action>;
   currentUser: User;
   activeRide: Ride | null;
+  resetDemo: () => Promise<void>;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -192,7 +215,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const currentUser = state.users.find((u) => u.id === state.currentUserId) ?? state.users[0];
     const activeRide =
       state.activeRideId ? state.rides.find((r) => r.id === state.activeRideId) ?? null : null;
-    return { state, dispatch, currentUser, activeRide };
+    const resetDemo = async () => {
+      await removeJSON(STORAGE_KEY);
+      dispatch({ type: 'RESET_DEMO' });
+    };
+    return { state, dispatch, currentUser, activeRide, resetDemo };
   }, [state]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

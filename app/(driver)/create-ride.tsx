@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Button, SegmentedButtons, Text, TextInput } from 'react-native-paper';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useApp } from '../../context/AppContext';
 import { PriceBreakdown } from '../../components/PriceBreakdown';
 import { calculateFare } from '../../utils/pricing';
@@ -11,8 +12,6 @@ import { DEFAULT_FUEL_EFFICIENCY_KM_PER_L } from '../../constants/config';
 import { colors, spacing } from '../../constants/theme';
 import type { Ride } from '../../utils/types';
 
-const HOUR = 60 * 60 * 1000;
-
 export default function CreateRide() {
   const { state, dispatch, currentUser } = useApp();
   const params = useLocalSearchParams<{ requestId?: string; from?: string; to?: string }>();
@@ -21,6 +20,8 @@ export default function CreateRide() {
   const [seats, setSeats] = useState('3');
   const [notes, setNotes] = useState('');
   const [departureType, setDepartureType] = useState<'now' | 'scheduled'>('now');
+  const [scheduledAt, setScheduledAt] = useState<Date>(() => new Date(Date.now() + 60 * 60 * 1000));
+  const [pickerOpen, setPickerOpen] = useState(false);
   const fulfillingRequestId = params.requestId;
 
   const fuelPrice = useMemo(
@@ -52,6 +53,8 @@ export default function CreateRide() {
   const onPost = () => {
     if (!vehicle || !breakdown || !estimate) return;
     const now = Date.now();
+    const departureTime =
+      departureType === 'now' ? now + 15 * 60 * 1000 : scheduledAt.getTime();
     const ride: Ride = {
       id: `r_${now}`,
       driverId: currentUser.id,
@@ -71,13 +74,15 @@ export default function CreateRide() {
       to: to.trim(),
       distanceKm: estimate.distanceKm,
       durationMin: estimate.durationMin,
-      departureTime: departureType === 'now' ? now + 15 * 60 * 1000 : now + HOUR,
+      departureTime,
       totalSeats: seatCount,
       pricePerPerson: breakdown.farePerPerson,
       fuelEfficiency,
       terrainMultiplier: 1.0,
       status: 'open',
       passengers: [],
+      messages: [],
+      driverStatus: 'preparing',
       notes: notes.trim() || undefined,
       createdAt: now,
     };
@@ -91,82 +96,111 @@ export default function CreateRide() {
   return (
     <>
       <Stack.Screen options={{ title: 'Create Ride' }} />
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        {fulfillingRequestId ? (
-          <View style={styles.banner}>
-            <Text variant="labelMedium" style={styles.bannerText}>
-              Fulfilling a rider request — posting this ride will mark it matched.
-            </Text>
-          </View>
-        ) : null}
-        <TextInput
-          label="From"
-          value={from}
-          onChangeText={setFrom}
-          mode="outlined"
-          placeholder="e.g. La Trinidad"
-        />
-        <TextInput
-          label="To"
-          value={to}
-          onChangeText={setTo}
-          mode="outlined"
-          placeholder="e.g. UP Baguio"
-        />
-
-        <View style={styles.group}>
-          <Text variant="labelLarge" style={styles.label}>
-            Departure
-          </Text>
-          <SegmentedButtons
-            value={departureType}
-            onValueChange={(v) => setDepartureType(v as 'now' | 'scheduled')}
-            buttons={[
-              { value: 'now', label: 'Leaving now' },
-              { value: 'scheduled', label: 'Scheduled' },
-            ]}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+          {fulfillingRequestId ? (
+            <View style={styles.banner}>
+              <Text variant="labelMedium" style={styles.bannerText}>
+                Fulfilling a rider request — posting this ride will mark it matched.
+              </Text>
+            </View>
+          ) : null}
+          <TextInput
+            label="From"
+            value={from}
+            onChangeText={setFrom}
+            mode="outlined"
+            placeholder="e.g. La Trinidad"
           />
-        </View>
+          <TextInput
+            label="To"
+            value={to}
+            onChangeText={setTo}
+            mode="outlined"
+            placeholder="e.g. UP Baguio"
+          />
 
-        <TextInput
-          label="Available seats"
-          value={seats}
-          onChangeText={setSeats}
-          mode="outlined"
-          keyboardType="number-pad"
-        />
-        <TextInput
-          label="Notes (optional)"
-          value={notes}
-          onChangeText={setNotes}
-          mode="outlined"
-          multiline
-          placeholder="Pag-uwi na, may space pa."
-        />
+          <View style={styles.group}>
+            <Text variant="labelLarge" style={styles.label}>
+              Departure
+            </Text>
+            <SegmentedButtons
+              value={departureType}
+              onValueChange={(v) => setDepartureType(v as 'now' | 'scheduled')}
+              buttons={[
+                { value: 'now', label: 'Leaving now' },
+                { value: 'scheduled', label: 'Scheduled' },
+              ]}
+            />
+            {departureType === 'scheduled' ? (
+              <>
+                <Button mode="outlined" icon="calendar" onPress={() => setPickerOpen(true)}>
+                  {scheduledAt.toLocaleString([], {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </Button>
+                {pickerOpen ? (
+                  <DateTimePicker
+                    value={scheduledAt}
+                    mode="datetime"
+                    minimumDate={new Date()}
+                    onChange={(_, date) => {
+                      setPickerOpen(Platform.OS === 'ios');
+                      if (date) setScheduledAt(date);
+                    }}
+                  />
+                ) : null}
+              </>
+            ) : null}
+          </View>
 
-        {!vehicle ? (
-          <Text style={styles.warning}>
-            Your profile has no vehicle on file. This demo user should be a driver — check mock data.
-          </Text>
-        ) : null}
+          <TextInput
+            label="Available seats"
+            value={seats}
+            onChangeText={setSeats}
+            mode="outlined"
+            keyboardType="number-pad"
+          />
+          <TextInput
+            label="Notes (optional)"
+            value={notes}
+            onChangeText={setNotes}
+            mode="outlined"
+            multiline
+            placeholder="Pag-uwi na, may space pa."
+          />
 
-        {estimate ? (
-          <Text variant="bodySmall" style={styles.muted}>
-            {estimate.source === 'cached' ? 'Cached route' : 'Estimated route'} ·{' '}
-            {estimate.distanceKm} km · {estimate.durationMin} min
-          </Text>
-        ) : (
-          <Text variant="bodySmall" style={styles.muted}>
-            Enter origin and destination to see the fare.
-          </Text>
-        )}
+          {!vehicle ? (
+            <Text style={styles.warning}>
+              Your profile has no vehicle on file. This demo user should be a driver — check mock data.
+            </Text>
+          ) : null}
 
-        {breakdown ? <PriceBreakdown breakdown={breakdown} /> : null}
+          {estimate ? (
+            <Text variant="bodySmall" style={styles.muted}>
+              {estimate.source === 'cached' ? 'Cached route' : 'Estimated route'} ·{' '}
+              {estimate.distanceKm} km · {estimate.durationMin} min
+            </Text>
+          ) : (
+            <Text variant="bodySmall" style={styles.muted}>
+              Enter origin and destination to see the fare.
+            </Text>
+          )}
 
-        <Button mode="contained" disabled={!canSubmit} onPress={onPost} style={styles.submit}>
-          Post Ride
-        </Button>
-      </ScrollView>
+          {breakdown ? <PriceBreakdown breakdown={breakdown} /> : null}
+
+          <Button mode="contained" disabled={!canSubmit} onPress={onPost} style={styles.submit}>
+            Post Ride
+          </Button>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </>
   );
 }
@@ -175,7 +209,7 @@ const styles = StyleSheet.create({
   container: {
     padding: spacing.lg,
     gap: spacing.md,
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing.xl * 2,
   },
   group: {
     gap: spacing.sm,

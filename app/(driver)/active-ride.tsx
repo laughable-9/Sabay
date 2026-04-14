@@ -85,7 +85,15 @@ export default function DriverActiveRide() {
         )}
 
         <View style={styles.footer}>
-          <Button mode="contained" onPress={onEndRide}>
+          <Button
+            mode="outlined"
+            icon="chat"
+            onPress={() => router.push({ pathname: '/chat', params: { id: ride.id } })}
+            style={{ flex: 1 }}
+          >
+            Chat
+          </Button>
+          <Button mode="contained" onPress={onEndRide} style={{ flex: 1 }}>
             End Ride
           </Button>
         </View>
@@ -184,6 +192,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   footer: {
+    flexDirection: 'row',
+    gap: spacing.sm,
     paddingTop: spacing.sm,
   },
   emptyContainer: {

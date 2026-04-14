@@ -28,6 +28,27 @@ export default function RiderActiveRide() {
     );
   }
 
+  if (activeRide.driverStatus !== 'enroute') {
+    return (
+      <View style={styles.emptyContainer}>
+        <Stack.Screen options={{ title: 'Active Ride' }} />
+        <MaterialCommunityIcons name="clock-outline" size={48} color={colors.muted} />
+        <Text variant="titleMedium">Trip hasn't started yet</Text>
+        <Text variant="bodyMedium" style={styles.muted}>
+          Live tracking opens once the driver is on the way.
+        </Text>
+        <Button
+          mode="contained"
+          icon="chat"
+          onPress={() => router.replace({ pathname: '/chat', params: { id: activeRide.id } })}
+          style={{ marginTop: spacing.md }}
+        >
+          Back to chat
+        </Button>
+      </View>
+    );
+  }
+
   const pickedUp = activeRide.passengers.filter((p) => p.status === 'picked_up').length;
 
   const onShare = async () => {
@@ -85,11 +106,21 @@ export default function RiderActiveRide() {
         </Card>
 
         <View style={styles.actions}>
-          <Button mode="contained" icon="share-variant" onPress={onShare} style={styles.action}>
-            Share My Ride
+          <Button
+            mode="outlined"
+            icon="chat"
+            onPress={() =>
+              router.push({ pathname: '/chat', params: { id: activeRide.id } })
+            }
+            style={styles.action}
+          >
+            Chat
           </Button>
-          <Button mode="outlined" onPress={onCancel} style={styles.action}>
-            Cancel Ride
+          <Button mode="contained" icon="share-variant" onPress={onShare} style={styles.action}>
+            Share
+          </Button>
+          <Button mode="text" onPress={onCancel} style={styles.action}>
+            Cancel
           </Button>
         </View>
       </View>

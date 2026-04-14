@@ -162,7 +162,9 @@ function mkRide(
     fuelEfficiency: driver.vehicle.fuelEfficiency,
     terrainMultiplier: 1.0,
     status: 'open',
+    driverStatus: 'preparing',
     passengers: [],
+    messages: [],
     notes,
     createdAt: now - 30 * 60 * 1000,
   };
@@ -194,7 +196,6 @@ function mkRequest(
   distanceKm: number,
   durationMin: number,
   departureOffsetMs: number,
-  maxFare: number | undefined,
   notes?: string,
 ): RideRequest {
   const now = Date.now();
@@ -209,7 +210,6 @@ function mkRequest(
     distanceKm,
     durationMin,
     desiredDepartureTime: now + departureOffsetMs,
-    maxFare,
     notes,
     status: 'open',
     createdAt: now - 10 * 60 * 1000,
@@ -217,10 +217,10 @@ function mkRequest(
 }
 
 export const MOCK_RIDE_REQUESTS: RideRequest[] = [
-  mkRequest('req1', rico, 'Ambuklao', 'UP Baguio', 18, 50, 30 * 60 * 1000, 80, 'Morning class, please be on time.'),
-  mkRequest('req2', bea, 'La Trinidad', 'SM Baguio', 9, 28, 2 * HOUR, 45),
-  mkRequest('req3', rico, 'Session Road', 'Camp John Hay', 4, 14, 3 * HOUR, undefined, 'Flexible on timing.'),
-  mkRequest('req4', bea, 'UP Baguio', 'La Trinidad', 8, 25, 5 * HOUR, 40, 'Anyone heading home after 5pm?'),
+  mkRequest('req1', rico, 'Ambuklao', 'UP Baguio', 18, 50, 30 * 60 * 1000, 'Morning class, please be on time.'),
+  mkRequest('req2', bea, 'La Trinidad', 'SM Baguio', 9, 28, 2 * HOUR),
+  mkRequest('req3', rico, 'Session Road', 'Camp John Hay', 4, 14, 3 * HOUR, 'Flexible on timing.'),
+  mkRequest('req4', bea, 'UP Baguio', 'La Trinidad', 8, 25, 5 * HOUR, 'Anyone heading home after 5pm?'),
 ];
 
 function mkSubmission(
