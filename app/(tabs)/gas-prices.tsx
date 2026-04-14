@@ -74,9 +74,6 @@ export default function GasPrices() {
             <Text variant="bodySmall" style={styles.muted}>
               per liter · {aggregate.usingFallback ? 'fallback default' : 'crowdsourced'}
             </Text>
-            <Text variant="bodySmall" style={styles.hint}>
-              Tracks DOE weekly ranges
-            </Text>
             <View style={styles.statsRow}>
               <Stat label="Range" value={`${formatPHP(aggregate.minPrice)} – ${formatPHP(aggregate.maxPrice)}`} />
               <Stat label="Reports" value={`${aggregate.reportCount} this week`} />
@@ -288,11 +285,6 @@ const styles = StyleSheet.create({
   },
   muted: {
     color: colors.muted,
-  },
-  hint: {
-    color: colors.primary,
-    fontStyle: 'italic',
-    marginTop: 2,
   },
   outlier: {
     color: colors.warning,

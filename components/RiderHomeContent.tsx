@@ -5,7 +5,6 @@ import { Button, Card, Chip, SegmentedButtons, Searchbar, Text } from 'react-nat
 import { useApp } from '../context/AppContext';
 import { RideCard } from './RideCard';
 import { formatDepartureTime } from '../utils/format';
-import { formatPHP } from '../utils/pricing';
 import { colors, spacing } from '../constants/theme';
 import type { RideRequest } from '../utils/types';
 
@@ -141,8 +140,7 @@ function RequestCard({
           </Chip>
         </View>
         <Text variant="bodySmall" style={styles.muted}>
-          {when} · {request.distanceKm} km ·{' '}
-          {request.maxFare ? `up to ${formatPHP(request.maxFare)}` : 'no fare cap'}
+          {when} · {request.distanceKm} km · {request.durationMin} min
         </Text>
         {request.notes ? (
           <Text variant="bodySmall" style={styles.notes} numberOfLines={2}>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { Button, TextInput, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -34,7 +34,11 @@ export default function Signup() {
   return (
     <>
       <Stack.Screen options={{ title: 'Sign Up' }} />
-      <ScrollView contentContainerStyle={styles.container}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text variant="bodyMedium" style={styles.intro}>
           Demo signup — tap the circle to add a photo; other fields are shells for the prototype.
         </Text>
@@ -69,15 +73,16 @@ export default function Signup() {
           autoCapitalize="none"
         />
 
-        <View style={styles.actions}>
-          <Button mode="contained" onPress={() => router.push('/verify-rider')}>
-            Continue as Rider
-          </Button>
-          <Button mode="outlined" onPress={() => router.push('/verify-driver')}>
-            Continue as Driver
-          </Button>
-        </View>
-      </ScrollView>
+          <View style={styles.actions}>
+            <Button mode="contained" onPress={() => router.push('/verify-rider')}>
+              Continue as Rider
+            </Button>
+            <Button mode="outlined" onPress={() => router.push('/verify-driver')}>
+              Continue as Driver
+            </Button>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </>
   );
 }

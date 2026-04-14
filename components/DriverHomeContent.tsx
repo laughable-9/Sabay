@@ -23,10 +23,10 @@ export function DriverHomeContent() {
   const openRequests = useMemo(
     () =>
       state.rideRequests
-        .filter((r) => r.status === 'open' && r.riderId !== currentUser.id)
+        .filter((r) => r.status === 'open')
         .sort((a, b) => b.createdAt - a.createdAt)
         .slice(0, 3),
-    [state.rideRequests, currentUser.id],
+    [state.rideRequests],
   );
 
   return (
@@ -83,7 +83,7 @@ function MyRideCard({ ride }: { ride: Ride }) {
   const timeLabel = formatDepartureTime(ride.departureTime);
 
   const onPress = () => {
-    router.push({ pathname: '/(driver)/active-ride', params: { id: ride.id } });
+    router.push({ pathname: '/chat', params: { id: ride.id } });
   };
 
   return (
@@ -139,9 +139,9 @@ function RequestPrompt({ request }: { request: RideRequest }) {
             </Text>
           </View>
         </View>
-        {request.maxFare ? (
-          <Text variant="bodySmall" style={styles.muted}>
-            Willing to pay up to {formatPHP(request.maxFare)}
+        {request.notes ? (
+          <Text variant="bodySmall" style={styles.muted} numberOfLines={2}>
+            “{request.notes}”
           </Text>
         ) : null}
         <Button mode="contained-tonal" compact onPress={onMatch} style={styles.matchBtn}>
