@@ -1,30 +1,38 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { Button, Card, Chip, Text } from 'react-native-paper';
+import { Button, Card, Chip, Switch, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
 import { StarRating } from '../../components/StarRating';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { Avatar } from '../../components/Avatar';
 import { formatPHP } from '../../utils/pricing';
-import { PLATFORM_FEE_PERCENT, PLATFORM_FEE_PHP } from '../../constants/config';
 import { colors, spacing } from '../../constants/theme';
 
 export default function DriverRideComplete() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { state } = useApp();
+  const { state, dispatch, currentUser } = useApp();
   const ride = state.rides.find((r) => r.id === id);
+  const insets = useSafeAreaInsets();
 
   const [rating, setRating] = useState(0);
   const [submitted, setSubmitted] = useState(false);
 
-  const earnings = useMemo(() => {
-    if (!ride) return { gross: 0, platformCut: 0, net: 0, paidCount: 0 };
-    const paidCount = ride.passengers.filter((p) => p.status !== 'waiting').length;
-    const gross = paidCount * ride.pricePerPerson;
-    const platformCut = paidCount * Math.max(PLATFORM_FEE_PHP, ride.pricePerPerson * PLATFORM_FEE_PERCENT);
-    return { gross, platformCut, net: gross - platformCut, paidCount };
+  const summary = useMemo(() => {
+    if (!ride) return { settled: 0, expected: 0, outstanding: 0, paidCount: 0, expectedCount: 0 };
+    const expectedPassengers = ride.passengers.filter((p) => p.status !== 'waiting');
+    const paidPassengers = expectedPassengers.filter((p) => p.paymentReceived);
+    const expected = expectedPassengers.length * ride.pricePerPerson;
+    const settled = paidPassengers.length * ride.pricePerPerson;
+    return {
+      settled,
+      expected,
+      outstanding: expected - settled,
+      paidCount: paidPassengers.length,
+      expectedCount: expectedPassengers.length,
+    };
   }, [ride]);
 
   if (!ride) {
@@ -36,10 +44,19 @@ export default function DriverRideComplete() {
     );
   }
 
+  const togglePayment = (passengerId: string, received: boolean) => {
+    dispatch({ type: 'SET_PASSENGER_PAYMENT', rideId: ride.id, passengerId, received });
+  };
+
   return (
     <>
       <Stack.Screen options={{ title: 'Ride Complete' }} />
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.container,
+          { paddingBottom: Math.max(spacing.xl, insets.bottom + spacing.lg) },
+        ]}
+      >
         <View style={styles.hero}>
           <MaterialCommunityIcons name="flag-checkered" size={56} color={colors.success} />
           <Text variant="headlineSmall" style={styles.title}>
@@ -56,11 +73,18 @@ export default function DriverRideComplete() {
               Fuel cost covered
             </Text>
             <Text variant="displaySmall" style={styles.earnings}>
-              {formatPHP(earnings.net)}
+              {formatPHP(summary.settled)}
             </Text>
             <Text variant="bodySmall" style={styles.muted}>
-              {earnings.paidCount} rider{earnings.paidCount === 1 ? '' : 's'} chipped in to split your fuel cost.
+              {summary.paidCount} of {summary.expectedCount} rider
+              {summary.expectedCount === 1 ? '' : 's'} have sent their share via GCash to{' '}
+              {currentUser.phone ?? 'your number'}.
             </Text>
+            {summary.outstanding > 0 ? (
+              <Text variant="bodySmall" style={styles.outstanding}>
+                {formatPHP(summary.outstanding)} still outstanding
+              </Text>
+            ) : null}
           </Card.Content>
         </Card>
 
@@ -68,19 +92,46 @@ export default function DriverRideComplete() {
           <Card style={styles.card}>
             <Card.Content style={{ gap: spacing.sm }}>
               <Text variant="labelLarge" style={styles.muted}>
-                Passengers
+                Payments
               </Text>
               {ride.passengers.map((p) => (
                 <View key={p.id} style={styles.paxRow}>
                   <View style={styles.paxName}>
-                    <Avatar uri={p.profilePicUri} firstName={p.firstName} size={32} />
-                    <Text variant="bodyLarge">{p.firstName}</Text>
-                    {p.verified ? <VerifiedBadge compact /> : null}
+                    <Avatar uri={p.profilePicUri} firstName={p.firstName} size={36} />
+                    <View>
+                      <View style={styles.nameRow}>
+                        <Text variant="bodyLarge">{p.firstName}</Text>
+                        {p.verified ? <VerifiedBadge compact /> : null}
+                      </View>
+                      <Text variant="bodySmall" style={styles.muted}>
+                        {formatPHP(ride.pricePerPerson)} ·{' '}
+                        {p.status === 'waiting'
+                          ? 'no-show'
+                          : p.status === 'dropped_off'
+                            ? 'dropped off early'
+                            : 'rode with you'}
+                      </Text>
+                    </View>
                   </View>
-                  <View style={styles.paxRight}>
-                    <Text variant="bodyMedium">{formatPHP(ride.pricePerPerson)}</Text>
-                    <Chip compact>{p.status === 'waiting' ? 'no-show' : 'paid'}</Chip>
-                  </View>
+                  {p.status === 'waiting' ? (
+                    <Chip compact>no-show</Chip>
+                  ) : (
+                    <View style={styles.paymentToggle}>
+                      <Text
+                        variant="labelSmall"
+                        style={[
+                          styles.paymentLabel,
+                          p.paymentReceived ? styles.paymentPaid : styles.paymentDue,
+                        ]}
+                      >
+                        {p.paymentReceived ? 'Paid' : 'Unpaid'}
+                      </Text>
+                      <Switch
+                        value={!!p.paymentReceived}
+                        onValueChange={(v) => togglePayment(p.id, v)}
+                      />
+                    </View>
+                  )}
                 </View>
               ))}
             </Card.Content>
@@ -119,7 +170,6 @@ const styles = StyleSheet.create({
   container: {
     padding: spacing.lg,
     gap: spacing.md,
-    paddingBottom: spacing.xl,
   },
   hero: {
     alignItems: 'center',
@@ -137,6 +187,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: spacing.xs,
   },
+  outstanding: {
+    color: colors.warning,
+    marginTop: spacing.xs,
+    fontWeight: '600',
+  },
   paxRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -145,12 +200,27 @@ const styles = StyleSheet.create({
   paxName: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.sm,
+    flex: 1,
   },
-  paxRight: {
+  nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.xs,
+  },
+  paymentToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  paymentLabel: {
+    fontWeight: '600',
+  },
+  paymentPaid: {
+    color: colors.success,
+  },
+  paymentDue: {
+    color: colors.muted,
   },
   rating: {
     alignItems: 'center',

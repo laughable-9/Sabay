@@ -173,6 +173,19 @@ export default function RiderActiveRide() {
               Your driver has arrived at {activeRide.from}. Confirm once you're in the car and
               the trip will start.
             </Text>
+            {activeRide.driverPhone ? (
+              <View style={styles.gcashBox}>
+                <Text variant="labelSmall" style={styles.muted}>
+                  Send the fare share via GCash
+                </Text>
+                <Text variant="titleMedium" style={styles.gcashNumber}>
+                  {activeRide.driverPhone}
+                </Text>
+                <Text variant="bodySmall" style={styles.muted}>
+                  {formatPHP(activeRide.pricePerPerson)} to {activeRide.driverFirstName}
+                </Text>
+              </View>
+            ) : null}
           </Dialog.Content>
           <Dialog.Actions>
             <Button onPress={onDismissPrompt}>Not yet</Button>
@@ -249,5 +262,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: spacing.xs,
+  },
+  gcashBox: {
+    marginTop: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  gcashNumber: {
+    color: colors.primary,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
 });
