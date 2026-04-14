@@ -4,6 +4,7 @@ import { Link } from 'expo-router';
 import { Button, Card, Chip, Text } from 'react-native-paper';
 import { useApp } from '../context/AppContext';
 import { formatPHP } from '../utils/pricing';
+import { formatDepartureTime } from '../utils/format';
 import { colors, spacing } from '../constants/theme';
 import type { Ride } from '../utils/types';
 
@@ -57,8 +58,7 @@ export function DriverHomeContent() {
 
 function MyRideCard({ ride }: { ride: Ride }) {
   const seatsTaken = ride.passengers.filter((p) => p.status !== 'dropped_off').length;
-  const departure = new Date(ride.departureTime);
-  const timeLabel = departure.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const timeLabel = formatDepartureTime(ride.departureTime);
 
   return (
     <Card style={styles.card}>
