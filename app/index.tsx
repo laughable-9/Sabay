@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import { Stack, Link } from 'expo-router';
 import { Button, Text } from 'react-native-paper';
 import { colors, spacing } from '../constants/theme';
@@ -9,9 +9,11 @@ export default function Splash() {
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
         <View style={styles.hero}>
-          <View style={styles.logo}>
-            <Text style={styles.logoMark}>S</Text>
-          </View>
+          <Image
+            source={require('../assets/splash-icon.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text variant="displaySmall" style={styles.wordmark}>
             Sabay
           </Text>
@@ -22,19 +24,12 @@ export default function Splash() {
 
         <View style={styles.actions}>
           <Link href="/(tabs)" asChild>
-            <Button
-              mode="contained"
-              buttonColor="#FFFFFF"
-              textColor={colors.primary}
-              contentStyle={styles.primaryContent}
-            >
+            <Button mode="contained" contentStyle={styles.primaryContent}>
               Get Started
             </Button>
           </Link>
           <Link href="/signup" asChild>
-            <Button mode="text" textColor="#FFFFFF">
-              Sign Up (demo shell)
-            </Button>
+            <Button mode="text">Sign Up (demo shell)</Button>
           </Link>
         </View>
       </View>
@@ -45,7 +40,7 @@ export default function Splash() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.cream,
     justifyContent: 'space-between',
     padding: spacing.xl,
     paddingBottom: spacing.xl * 2,
@@ -57,27 +52,16 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   logo: {
-    width: 104,
-    height: 104,
-    borderRadius: 26,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoMark: {
-    fontSize: 72,
-    fontWeight: '800',
-    color: colors.primary,
-    textAlign: 'center',
-    includeFontPadding: false,
+    width: 160,
+    height: 160,
   },
   wordmark: {
-    color: '#FFFFFF',
+    color: colors.primary,
     fontWeight: '800',
-    marginTop: spacing.sm,
+    marginTop: spacing.xs,
   },
   tagline: {
-    color: '#EAF4EA',
+    color: colors.muted,
     textAlign: 'center',
     paddingHorizontal: spacing.md,
   },
