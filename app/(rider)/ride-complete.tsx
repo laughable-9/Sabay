@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { Button, Card, Text } from 'react-native-paper';
+import { Button, Card, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
 import { StarRating } from '../../components/StarRating';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
-import { Avatar } from '../../components/Avatar';
 import { formatPHP } from '../../utils/pricing';
 import { estimateCO2SavedKg, formatKg } from '../../utils/impact';
 import { colors, spacing } from '../../constants/theme';
@@ -17,6 +16,7 @@ export default function RiderRideComplete() {
   const ride = state.rides.find((r) => r.id === id);
 
   const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
   if (!ride) {
@@ -60,11 +60,6 @@ export default function RiderRideComplete() {
         <Card style={styles.card}>
           <Card.Content>
             <View style={styles.driverRow}>
-              <Avatar
-                uri={ride.driverProfilePicUri}
-                firstName={ride.driverFirstName}
-                size={40}
-              />
               <Text variant="titleMedium">Rate {ride.driverFirstName}</Text>
               {ride.driverVerified ? <VerifiedBadge compact /> : null}
             </View>
@@ -74,6 +69,16 @@ export default function RiderRideComplete() {
             <View style={styles.rating}>
               <StarRating value={rating} onChange={setRating} disabled={submitted} />
             </View>
+            <TextInput
+              label="Add a comment (optional)"
+              value={comment}
+              onChangeText={setComment}
+              mode="outlined"
+              multiline
+              numberOfLines={3}
+              disabled={submitted}
+              style={styles.comment}
+            />
             <Button
               mode="contained-tonal"
               disabled={rating === 0 || submitted}
@@ -164,6 +169,9 @@ const styles = StyleSheet.create({
   },
   submit: {
     marginTop: spacing.xs,
+  },
+  comment: {
+    marginTop: spacing.sm,
   },
   emptyContainer: {
     flex: 1,
