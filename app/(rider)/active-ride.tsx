@@ -158,6 +158,13 @@ export default function RiderActiveRide() {
             <Button mode="contained" icon="share-variant" onPress={onShare}>
               Share my ride
             </Button>
+            <Button
+              mode="text"
+              icon="eye-outline"
+              onPress={() => router.push('/tracking')}
+            >
+              Preview what recipients see
+            </Button>
           </View>
         </View>
       </View>
@@ -255,6 +262,7 @@ const styles = StyleSheet.create({
   },
   actions: {
     paddingTop: spacing.sm,
+    gap: spacing.xs,
   },
   emptyContainer: {
     flex: 1,

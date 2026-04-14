@@ -49,21 +49,24 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   logo: {
-    width: 160,
-    height: 160,
+    width: 220,
+    height: 220,
+    marginBottom: spacing.md,
   },
   wordmark: {
     color: colors.primary,
     fontWeight: '800',
-    marginTop: spacing.xs,
+    fontSize: 44,
+    letterSpacing: -0.5,
   },
   tagline: {
     color: colors.muted,
     textAlign: 'center',
     paddingHorizontal: spacing.md,
+    marginTop: spacing.xs,
   },
   actions: {
     gap: spacing.sm,
