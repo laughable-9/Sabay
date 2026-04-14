@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { Button, Card, Checkbox, Text, TextInput } from 'react-native-paper';
+import { Button, Card, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing } from '../../constants/theme';
@@ -90,10 +90,10 @@ export default function VerifyDriver() {
           />
 
           <Pressable style={styles.agreeRow} onPress={() => setAgreed((v) => !v)}>
-            <Checkbox
-              status={agreed ? 'checked' : 'unchecked'}
-              color={colors.primary}
-              uncheckedColor={colors.muted}
+            <MaterialCommunityIcons
+              name={agreed ? 'checkbox-marked' : 'checkbox-blank-outline'}
+              size={26}
+              color={agreed ? colors.primary : colors.muted}
             />
             <Text variant="bodyMedium" style={styles.agreeText}>
               I agree to the Terms and the Data Privacy Policy.
