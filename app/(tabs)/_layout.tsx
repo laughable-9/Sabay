@@ -1,13 +1,26 @@
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useApp } from '../../context/AppContext';
 import { colors } from '../../constants/theme';
 
 export default function TabsLayout() {
+  const { state } = useApp();
+
+  // Lock users into the ride flow (Grab/Uber style): while there's an active
+  // ride, any tab visit bounces to /chat so they can't wander away from the trip.
+  if (state.activeRideId) {
+    return <Redirect href={{ pathname: '/chat', params: { id: state.activeRideId } }} />;
+  }
+
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.muted,
+        tabBarStyle: {
+          backgroundColor: colors.card,
+          borderTopColor: colors.surface,
+        },
         headerShown: false,
       }}
     >
