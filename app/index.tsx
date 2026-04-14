@@ -1,5 +1,5 @@
 import { Image, StyleSheet, View } from 'react-native';
-import { Stack, Link } from 'expo-router';
+import { Stack, Link, router } from 'expo-router';
 import { Button, Text } from 'react-native-paper';
 import { colors, spacing } from '../constants/theme';
 
@@ -24,12 +24,24 @@ export default function Splash() {
 
         <View style={styles.actions}>
           <Link href="/signup" asChild>
-            <Button mode="contained" contentStyle={styles.primaryContent}>
+            <Button
+              mode="contained"
+              contentStyle={styles.primaryContent}
+              labelStyle={styles.primaryLabel}
+            >
               Get Started
             </Button>
           </Link>
-          <Text variant="bodySmall" style={styles.footnote}>
-            Sign up with a photo and your GCash number — takes a few seconds.
+          <Text variant="bodySmall" style={styles.legal}>
+            By continuing you agree to our{' '}
+            <Text style={styles.legalLink} onPress={() => router.push('/terms')}>
+              Terms
+            </Text>
+            {' '}and{' '}
+            <Text style={styles.legalLink} onPress={() => router.push('/privacy')}>
+              Privacy Policy
+            </Text>
+            .
           </Text>
         </View>
       </View>
@@ -69,13 +81,23 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   actions: {
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   primaryContent: {
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.sm,
   },
-  footnote: {
+  primaryLabel: {
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  legal: {
     color: colors.muted,
     textAlign: 'center',
+  },
+  legalLink: {
+    color: colors.primary,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });
