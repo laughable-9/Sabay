@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Stack } from 'expo-router';
 import { Button, Card, Chip, SegmentedButtons, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -66,11 +65,9 @@ export default function Profile() {
   }, [state.rides, currentUser.id]);
 
   return (
-    <>
-      <Stack.Screen options={{ title: 'Profile' }} />
-      <ScrollView
-        contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}
-      >
+    <ScrollView
+      contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}
+    >
         <Card style={styles.card}>
           <Card.Content>
             <View style={styles.profileHeader}>
@@ -193,8 +190,7 @@ export default function Profile() {
             Clears saved state and re-seeds fresh rides, gas prices, and requests.
           </Text>
         </View>
-      </ScrollView>
-    </>
+    </ScrollView>
   );
 }
 

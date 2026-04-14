@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
-import { Stack } from 'expo-router';
 import {
   Button,
   Card,
@@ -54,7 +53,6 @@ export default function GasPrices() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Gas Prices' }} />
       <View style={[styles.container, { paddingTop: insets.top + spacing.md }]}>
         <SegmentedButtons
           value={fuelType}

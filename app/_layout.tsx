@@ -20,7 +20,12 @@ export default function RootLayout() {
               headerTitleStyle: { fontWeight: '700' },
               contentStyle: { backgroundColor: theme.colors.background },
             }}
-          />
+          >
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="(rider)" options={{ headerShown: false }} />
+            <Stack.Screen name="(driver)" options={{ headerShown: false }} />
+          </Stack>
         </AppProvider>
       </PaperProvider>
     </SafeAreaProvider>
