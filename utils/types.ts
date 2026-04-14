@@ -5,6 +5,7 @@ export type FuelType = 'unleaded' | 'diesel' | 'premium';
 export type User = {
   id: string;
   firstName: string;
+  phone?: string;
   rating: number;
   verified: boolean;
   isDriver: boolean;
@@ -35,6 +36,7 @@ export type Passenger = {
   status: PassengerStatus;
   joinedAt: number;
   profilePicUri?: string;
+  paymentReceived?: boolean;
 };
 
 export type RideStatus = 'open' | 'active' | 'completed' | 'cancelled';
@@ -65,6 +67,7 @@ export type Ride = {
   driverProfilePicUri?: string;
   driverCompletedRides?: number;
   driverJoinedAt?: number;
+  driverPhone?: string;
   vehicle: Pick<Vehicle, 'make' | 'model' | 'color' | 'plateNumber'>;
   from: string;
   to: string;

@@ -15,6 +15,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'u_self',
     firstName: 'Kyle',
+    phone: '0975 099 6672',
     rating: 5.0,
     verified: true,
     isDriver: true,
@@ -35,6 +36,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'u_maria',
     firstName: 'Maria',
+    phone: '0917 555 1423',
     rating: 4.9,
     verified: true,
     isDriver: true,
@@ -55,6 +57,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'u_josh',
     firstName: 'Josh',
+    phone: '0906 221 8840',
     rating: 4.8,
     verified: true,
     isDriver: true,
@@ -75,6 +78,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'u_ana',
     firstName: 'Ana',
+    phone: '0923 884 6621',
     rating: 5.0,
     verified: true,
     isDriver: true,
@@ -95,6 +99,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'u_rico',
     firstName: 'Rico',
+    phone: '0945 117 5522',
     rating: 4.7,
     verified: true,
     isDriver: false,
@@ -105,6 +110,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'u_bea',
     firstName: 'Bea',
+    phone: '0917 330 2284',
     rating: 4.9,
     verified: true,
     isDriver: false,
@@ -146,6 +152,7 @@ function mkRide(
     driverProfilePicUri: driver.profilePicUri,
     driverCompletedRides: driver.completedRides,
     driverJoinedAt: driver.joinedAt,
+    driverPhone: driver.phone,
     vehicle: {
       make: driver.vehicle.make,
       model: driver.vehicle.model,

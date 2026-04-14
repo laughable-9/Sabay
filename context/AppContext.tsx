@@ -25,7 +25,7 @@ import type {
   User,
 } from '../utils/types';
 
-const STORAGE_KEY = 'sabay.appState.v6';
+const STORAGE_KEY = 'sabay.appState.v7';
 
 export type AppState = {
   users: User[];
@@ -64,6 +64,10 @@ type Action =
   | { type: 'SEND_MESSAGE'; rideId: string; message: ChatMessage }
   | { type: 'SET_DRIVER_STATUS'; rideId: string; status: DriverStatus }
   | { type: 'LEAVE_RIDE'; rideId: string; userId: string }
+  | { type: 'CANCEL_RIDE'; rideId: string }
+  | { type: 'DROP_OFF_PASSENGER'; rideId: string; passengerId: string }
+  | { type: 'SET_USER_PROFILE'; updates: Partial<User> }
+  | { type: 'SET_PASSENGER_PAYMENT'; rideId: string; passengerId: string; received: boolean }
   | { type: 'RESET_DEMO' };
 
 const VALID_DRIVER_STATUSES: ReadonlyArray<DriverStatus> = [
@@ -109,6 +113,12 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, rides: [action.ride, ...state.rides] };
 
     case 'JOIN_RIDE': {
+      // Ignore late auto-joiners if the ride was cancelled or completed
+      // in the meantime — keeps timers from resurrecting dead rides.
+      const target = state.rides.find((r) => r.id === action.rideId);
+      if (!target || target.status === 'cancelled' || target.status === 'completed') {
+        return state;
+      }
       const rides = state.rides.map((r) =>
         r.id === action.rideId
           ? { ...r, passengers: [...r.passengers, action.passenger], status: 'active' as const }
@@ -190,6 +200,52 @@ function reducer(state: AppState, action: Action): AppState {
       const activeRideId =
         state.activeRideId === action.rideId ? null : state.activeRideId;
       return { ...state, rides, activeRideId };
+    }
+
+    case 'CANCEL_RIDE': {
+      const rides = state.rides.map((r) =>
+        r.id === action.rideId ? { ...r, status: 'cancelled' as const } : r,
+      );
+      const activeRideId =
+        state.activeRideId === action.rideId ? null : state.activeRideId;
+      return { ...state, rides, activeRideId };
+    }
+
+    case 'DROP_OFF_PASSENGER': {
+      const rides = state.rides.map((r) =>
+        r.id === action.rideId
+          ? {
+              ...r,
+              passengers: r.passengers.map((p) =>
+                p.id === action.passengerId ? { ...p, status: 'dropped_off' as const } : p,
+              ),
+            }
+          : r,
+      );
+      return { ...state, rides };
+    }
+
+    case 'SET_USER_PROFILE': {
+      const users = state.users.map((u) =>
+        u.id === state.currentUserId ? { ...u, ...action.updates } : u,
+      );
+      return { ...state, users };
+    }
+
+    case 'SET_PASSENGER_PAYMENT': {
+      const rides = state.rides.map((r) =>
+        r.id === action.rideId
+          ? {
+              ...r,
+              passengers: r.passengers.map((p) =>
+                p.id === action.passengerId
+                  ? { ...p, paymentReceived: action.received }
+                  : p,
+              ),
+            }
+          : r,
+      );
+      return { ...state, rides };
     }
 
     case 'RESET_DEMO':
