@@ -31,8 +31,9 @@ export default function DriverActiveRide() {
   };
 
   const onEndRide = () => {
-    dispatch({ type: 'END_RIDE', rideId: ride.id });
-    router.replace('/(driver)/ride-complete');
+    const rideId = ride.id;
+    dispatch({ type: 'END_RIDE', rideId });
+    router.replace({ pathname: '/(driver)/ride-complete', params: { id: rideId } });
   };
 
   return (
