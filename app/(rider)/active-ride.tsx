@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react';
 import { Share, StyleSheet, View } from 'react-native';
 import { Stack, router } from 'expo-router';
-import { Button, Card, Text } from 'react-native-paper';
+import { Button, Card, Dialog, Portal, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
 import { SabayMap } from '../../components/SabayMap';
 import { PassengerBadge } from '../../components/PassengerBadge';
@@ -13,13 +15,24 @@ import { formatPHP } from '../../utils/pricing';
 import { colors, spacing } from '../../constants/theme';
 
 export default function RiderActiveRide() {
-  const { activeRide, dispatch } = useApp();
-  const { polyline, position, etaLabel } = useRideSimulation(activeRide);
+  const { activeRide, dispatch, currentUser } = useApp();
+  const { polyline, position, etaLabel, region, phaseLabel } = useRideSimulation(activeRide);
+  const insets = useSafeAreaInsets();
+  const [pickupDismissed, setPickupDismissed] = useState(false);
+
+  // When the ride wraps, route to ride-complete.
+  useEffect(() => {
+    if (activeRide?.driverStatus === 'arrived') {
+      const id = activeRide.id;
+      dispatch({ type: 'END_RIDE', rideId: id });
+      router.replace({ pathname: '/(rider)/ride-complete', params: { id } });
+    }
+  }, [activeRide?.driverStatus, activeRide?.id, dispatch]);
 
   if (!activeRide) {
     return (
-      <View style={styles.emptyContainer}>
-        <Stack.Screen options={{ title: 'Active Ride' }} />
+      <View style={[styles.emptyContainer, { paddingTop: insets.top + spacing.xl }]}>
+        <Stack.Screen options={{ title: 'Active Ride', headerBackVisible: false }} />
         <Text variant="titleMedium">No active ride</Text>
         <Text variant="bodyMedium" style={styles.muted}>
           Join a ride from the Home tab to see live tracking.
@@ -28,10 +41,10 @@ export default function RiderActiveRide() {
     );
   }
 
-  if (activeRide.driverStatus !== 'enroute') {
+  if (activeRide.driverStatus === 'preparing') {
     return (
-      <View style={styles.emptyContainer}>
-        <Stack.Screen options={{ title: 'Active Ride' }} />
+      <View style={[styles.emptyContainer, { paddingTop: insets.top + spacing.xl }]}>
+        <Stack.Screen options={{ title: 'Active Ride', headerBackVisible: false }} />
         <MaterialCommunityIcons name="clock-outline" size={48} color={colors.muted} />
         <Text variant="titleMedium">Trip hasn't started yet</Text>
         <Text variant="bodyMedium" style={styles.muted}>
@@ -49,7 +62,9 @@ export default function RiderActiveRide() {
     );
   }
 
-  const pickedUp = activeRide.passengers.filter((p) => p.status === 'picked_up').length;
+  const joined = activeRide.passengers.length;
+  const showPickupPrompt =
+    activeRide.driverStatus === 'at_pickup' && !pickupDismissed;
 
   const onShare = async () => {
     const token = shortToken(activeRide.id);
@@ -58,72 +73,115 @@ export default function RiderActiveRide() {
     });
   };
 
-  const onCancel = () => {
-    const rideId = activeRide.id;
-    dispatch({ type: 'END_RIDE', rideId });
-    router.replace({ pathname: '/(rider)/ride-complete', params: { id: rideId } });
+  const onConfirmPickup = () => {
+    const self = activeRide.passengers.find((p) => p.userId === currentUser.id);
+    if (self) {
+      dispatch({ type: 'PICKUP_PASSENGER', rideId: activeRide.id, passengerId: self.id });
+    }
+    dispatch({ type: 'SET_DRIVER_STATUS', rideId: activeRide.id, status: 'to_destination' });
   };
+
+  const onDismissPrompt = () => setPickupDismissed(true);
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Active Ride' }} />
+      <Stack.Screen
+        options={{
+          title: 'Active Ride',
+          headerBackVisible: false,
+          gestureEnabled: false,
+        }}
+      />
       <View style={styles.container}>
         <View style={styles.mapWrap}>
-          <SabayMap driverPosition={position ?? undefined} polyline={polyline} />
+          <SabayMap
+            driverPosition={position ?? undefined}
+            polyline={polyline}
+            region={region}
+          />
           <View style={styles.badgeOverlay}>
-            <PassengerBadge pickedUp={pickedUp} total={activeRide.totalSeats} />
+            <PassengerBadge joined={joined} total={activeRide.totalSeats} />
           </View>
         </View>
 
-        <Card style={styles.infoCard}>
-          <Card.Content>
-            <View style={styles.driverHeader}>
-              <Avatar
-                uri={activeRide.driverProfilePicUri}
-                firstName={activeRide.driverFirstName}
-                size={44}
-              />
-              <View style={{ flex: 1 }}>
-                <View style={styles.driverRow}>
-                  <Text variant="titleMedium">{activeRide.driverFirstName}</Text>
-                  {activeRide.driverVerified ? <VerifiedBadge compact /> : null}
+        <View style={styles.sheet}>
+          <View style={styles.phaseRow}>
+            <MaterialCommunityIcons
+              name={
+                activeRide.driverStatus === 'to_destination'
+                  ? 'car'
+                  : activeRide.driverStatus === 'at_pickup'
+                    ? 'map-marker-radius'
+                    : 'map-marker-path'
+              }
+              size={16}
+              color={colors.primary}
+            />
+            <Text variant="labelLarge" style={styles.phaseText}>
+              {phaseLabel || 'Tracking your ride'}
+            </Text>
+          </View>
+
+          <Card style={styles.infoCard} mode="contained">
+            <Card.Content>
+              <View style={styles.driverHeader}>
+                <Avatar
+                  uri={activeRide.driverProfilePicUri}
+                  firstName={activeRide.driverFirstName}
+                  size={44}
+                />
+                <View style={{ flex: 1 }}>
+                  <View style={styles.driverRow}>
+                    <Text variant="titleMedium">{activeRide.driverFirstName}</Text>
+                    {activeRide.driverVerified ? <VerifiedBadge compact /> : null}
+                  </View>
+                  <Text variant="bodySmall" style={styles.muted}>
+                    {activeRide.vehicle.make} {activeRide.vehicle.model}
+                  </Text>
                 </View>
-                <Text variant="bodySmall" style={styles.muted}>
-                  {activeRide.vehicle.make} {activeRide.vehicle.model}
+              </View>
+              <View style={styles.etaRow}>
+                <MaterialCommunityIcons name="clock-outline" size={16} color={colors.muted} />
+                <Text variant="bodyMedium" style={styles.muted}>
+                  ETA {etaLabel} · Fare {formatPHP(activeRide.pricePerPerson)}
                 </Text>
               </View>
-            </View>
-            <Text variant="bodyMedium" style={styles.routeLine}>
-              {activeRide.from} → {activeRide.to}
-            </Text>
-            <View style={styles.etaRow}>
-              <MaterialCommunityIcons name="clock-outline" size={16} color={colors.muted} />
-              <Text variant="bodyMedium" style={styles.muted}>
-                ETA {etaLabel} · Fare {formatPHP(activeRide.pricePerPerson)}
-              </Text>
-            </View>
-          </Card.Content>
-        </Card>
+            </Card.Content>
+          </Card>
 
-        <View style={styles.actions}>
-          <Button
-            mode="outlined"
-            icon="chat"
-            onPress={() =>
-              router.push({ pathname: '/chat', params: { id: activeRide.id } })
-            }
-            style={styles.action}
+          <View
+            style={[
+              styles.actions,
+              { paddingBottom: Math.max(spacing.md, insets.bottom + spacing.xs) },
+            ]}
           >
-            Chat
-          </Button>
-          <Button mode="contained" icon="share-variant" onPress={onShare} style={styles.action}>
-            Share
-          </Button>
-          <Button mode="text" onPress={onCancel} style={styles.action}>
-            Cancel
-          </Button>
+            <Button mode="contained" icon="share-variant" onPress={onShare}>
+              Share my ride
+            </Button>
+          </View>
         </View>
       </View>
+
+      <Portal>
+        <Dialog visible={showPickupPrompt} onDismiss={onDismissPrompt} dismissable={false}>
+          <Dialog.Icon icon="map-marker-check" color={colors.primary} />
+          <Dialog.Title style={{ textAlign: 'center' }}>
+            {activeRide.driverFirstName} is at your pickup
+          </Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium" style={{ textAlign: 'center' }}>
+              Your driver has arrived at {activeRide.from}. Confirm once you're in the car and
+              the trip will start.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={onDismissPrompt}>Not yet</Button>
+            <Button mode="contained" icon="car-arrow-left" onPress={onConfirmPickup}>
+              I'm in the car
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </>
   );
 }
@@ -141,8 +199,25 @@ const styles = StyleSheet.create({
     top: spacing.md,
     right: spacing.md,
   },
+  sheet: {
+    backgroundColor: colors.background,
+    paddingTop: spacing.md,
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    marginTop: -20,
+  },
+  phaseRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  phaseText: {
+    color: colors.primary,
+    fontWeight: '700',
+  },
   infoCard: {
-    margin: spacing.md,
     backgroundColor: colors.card,
   },
   driverHeader: {
@@ -156,9 +231,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
   },
-  routeLine: {
-    marginTop: spacing.xs,
-  },
   etaRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -169,13 +241,7 @@ const styles = StyleSheet.create({
     color: colors.muted,
   },
   actions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.lg,
-  },
-  action: {
-    flex: 1,
+    paddingTop: spacing.sm,
   },
   emptyContainer: {
     flex: 1,
