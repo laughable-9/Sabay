@@ -39,7 +39,12 @@ export type Passenger = {
 
 export type RideStatus = 'open' | 'active' | 'completed' | 'cancelled';
 
-export type DriverStatus = 'preparing' | 'enroute' | 'arrived';
+export type DriverStatus =
+  | 'preparing'
+  | 'to_pickup'
+  | 'at_pickup'
+  | 'to_destination'
+  | 'arrived';
 
 export type ChatMessage = {
   id: string;
@@ -48,6 +53,7 @@ export type ChatMessage = {
   senderProfilePicUri?: string;
   text: string;
   sentAt: number;
+  isSystem?: boolean;
 };
 
 export type Ride = {

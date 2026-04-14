@@ -25,7 +25,7 @@ import type {
   User,
 } from '../utils/types';
 
-const STORAGE_KEY = 'sabay.appState.v5';
+const STORAGE_KEY = 'sabay.appState.v6';
 
 export type AppState = {
   users: User[];
@@ -63,12 +63,37 @@ type Action =
   | { type: 'FULFILL_REQUEST'; requestId: string; rideId: string }
   | { type: 'SEND_MESSAGE'; rideId: string; message: ChatMessage }
   | { type: 'SET_DRIVER_STATUS'; rideId: string; status: DriverStatus }
+  | { type: 'LEAVE_RIDE'; rideId: string; userId: string }
   | { type: 'RESET_DEMO' };
+
+const VALID_DRIVER_STATUSES: ReadonlyArray<DriverStatus> = [
+  'preparing',
+  'to_pickup',
+  'at_pickup',
+  'to_destination',
+  'arrived',
+];
+
+function migrateRides(rides: Ride[] | undefined): Ride[] | undefined {
+  if (!rides) return rides;
+  return rides.map((r) => ({
+    ...r,
+    driverStatus: VALID_DRIVER_STATUSES.includes(r.driverStatus) ? r.driverStatus : 'preparing',
+    messages: r.messages ?? [],
+  }));
+}
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
-    case 'HYDRATE':
-      return { ...state, ...action.payload, hydrated: true };
+    case 'HYDRATE': {
+      const rides = migrateRides(action.payload.rides);
+      return {
+        ...state,
+        ...action.payload,
+        ...(rides ? { rides } : {}),
+        hydrated: true,
+      };
+    }
 
     case 'SET_ROLE':
       return { ...state, role: action.role };
@@ -150,6 +175,21 @@ function reducer(state: AppState, action: Action): AppState {
         r.id === action.rideId ? { ...r, driverStatus: action.status } : r,
       );
       return { ...state, rides };
+    }
+
+    case 'LEAVE_RIDE': {
+      const rides = state.rides.map((r) =>
+        r.id === action.rideId
+          ? {
+              ...r,
+              passengers: r.passengers.filter((p) => p.userId !== action.userId),
+              status: r.passengers.some((p) => p.userId !== action.userId) ? r.status : 'open',
+            }
+          : r,
+      );
+      const activeRideId =
+        state.activeRideId === action.rideId ? null : state.activeRideId;
+      return { ...state, rides, activeRideId };
     }
 
     case 'RESET_DEMO':
