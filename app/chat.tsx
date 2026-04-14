@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -9,19 +9,24 @@ import {
   View,
 } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { Button, Text } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { Avatar } from '../components/Avatar';
-import { VerifiedBadge } from '../components/VerifiedBadge';
 import { colors, spacing } from '../constants/theme';
 import type { ChatMessage, DriverStatus } from '../utils/types';
 
-const STATUS_COPY: Record<DriverStatus, { label: string; color: string }> = {
-  preparing: { label: 'Driver is preparing to leave', color: colors.muted },
-  enroute: { label: 'Driver is on the way', color: colors.primary },
-  arrived: { label: 'Driver has arrived', color: colors.success },
+const STATUS_COPY: Record<DriverStatus, { label: string; color: string; icon: 'clock-outline' | 'car' | 'map-marker-check' }> = {
+  preparing: { label: 'Preparing to leave', color: colors.muted, icon: 'clock-outline' },
+  enroute: { label: 'On the way', color: colors.primary, icon: 'car' },
+  arrived: { label: 'Arrived', color: colors.success, icon: 'map-marker-check' },
 };
+
+// Demo auto-advance timings: driver sends an initial greeting, then starts the
+// trip after this delay so a single-device demo doesn't require manual role
+// switching to see the map animation.
+const AUTO_GREETING_DELAY_MS = 1500;
+const AUTO_START_DELAY_MS = 5000;
 
 export default function Chat() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -29,11 +34,67 @@ export default function Chat() {
   const ride = state.rides.find((r) => r.id === id);
   const [draft, setDraft] = useState('');
   const listRef = useRef<FlatList<ChatMessage>>(null);
+  const autoGreetedRef = useRef(false);
+  const autoStartedRef = useRef(false);
 
   const isDriver = useMemo(
     () => !!ride && ride.driverId === currentUser.id,
     [ride, currentUser.id],
   );
+
+  // Demo auto-advance: if the user is viewing as a rider and the ride has at
+  // least one passenger, simulate the driver replying and starting the trip.
+  useEffect(() => {
+    if (!ride) return;
+    if (isDriver) return;
+    if (ride.driverStatus !== 'preparing') return;
+    if (ride.passengers.length === 0) return;
+
+    let greetTimer: ReturnType<typeof setTimeout> | undefined;
+    let startTimer: ReturnType<typeof setTimeout> | undefined;
+
+    if (!autoGreetedRef.current) {
+      autoGreetedRef.current = true;
+      greetTimer = setTimeout(() => {
+        dispatch({
+          type: 'SEND_MESSAGE',
+          rideId: ride.id,
+          message: {
+            id: `m_auto_${Date.now()}`,
+            senderId: ride.driverId,
+            senderFirstName: ride.driverFirstName,
+            senderProfilePicUri: ride.driverProfilePicUri,
+            text: "Hey! I'll be heading out in a bit. See you at the pickup 👋",
+            sentAt: Date.now(),
+          },
+        });
+      }, AUTO_GREETING_DELAY_MS);
+    }
+
+    if (!autoStartedRef.current) {
+      autoStartedRef.current = true;
+      startTimer = setTimeout(() => {
+        dispatch({
+          type: 'SEND_MESSAGE',
+          rideId: ride.id,
+          message: {
+            id: `m_auto_start_${Date.now()}`,
+            senderId: ride.driverId,
+            senderFirstName: ride.driverFirstName,
+            senderProfilePicUri: ride.driverProfilePicUri,
+            text: "On my way now 🚗",
+            sentAt: Date.now(),
+          },
+        });
+        dispatch({ type: 'SET_DRIVER_STATUS', rideId: ride.id, status: 'enroute' });
+      }, AUTO_START_DELAY_MS);
+    }
+
+    return () => {
+      if (greetTimer) clearTimeout(greetTimer);
+      if (startTimer) clearTimeout(startTimer);
+    };
+  }, [ride?.id, ride?.driverStatus, ride?.passengers.length, isDriver]);
 
   if (!ride) {
     return (
@@ -74,40 +135,45 @@ export default function Chat() {
     }
   };
 
+  const headline = isDriver
+    ? ride.passengers.length === 0
+      ? 'Waiting for riders'
+      : `${ride.passengers.length} rider${ride.passengers.length === 1 ? '' : 's'} joined`
+    : ride.driverFirstName;
+
   return (
     <>
       <Stack.Screen
         options={{
           title: `${ride.from} → ${ride.to}`,
+          headerRight: () => (
+            <View style={styles.statusPill}>
+              <MaterialCommunityIcons
+                name={statusCopy.icon}
+                size={14}
+                color={statusCopy.color}
+              />
+              <Text variant="labelSmall" style={{ color: statusCopy.color }}>
+                {statusCopy.label}
+              </Text>
+            </View>
+          ),
         }}
       />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={80}
+        keyboardVerticalOffset={90}
       >
-        <View style={styles.header}>
+        <View style={styles.headerRow}>
           <Avatar
             uri={isDriver ? undefined : ride.driverProfilePicUri}
             firstName={isDriver ? 'Group' : ride.driverFirstName}
-            size={40}
+            size={36}
           />
-          <View style={{ flex: 1 }}>
-            <View style={styles.headerRow}>
-              <Text variant="titleSmall">
-                {isDriver ? 'Group chat' : ride.driverFirstName}
-              </Text>
-              {!isDriver && ride.driverVerified ? <VerifiedBadge compact /> : null}
-            </View>
-            <Text variant="bodySmall" style={[styles.statusLine, { color: statusCopy.color }]}>
-              {statusCopy.label}
-            </Text>
-          </View>
-          <MaterialCommunityIcons
-            name={ride.driverStatus === 'enroute' ? 'car' : 'clock-outline'}
-            size={22}
-            color={statusCopy.color}
-          />
+          <Text variant="titleMedium" style={styles.headline}>
+            {headline}
+          </Text>
         </View>
 
         <FlatList
@@ -134,18 +200,11 @@ export default function Chat() {
             <Text style={styles.ctaText}>Open live tracking</Text>
           </Pressable>
         ) : isDriver ? (
-          <View style={styles.driverCta}>
-            <Button mode="contained" icon="car" onPress={onStartTrip}>
-              I'm on my way
-            </Button>
-          </View>
-        ) : (
-          <View style={styles.waitingNote}>
-            <Text variant="bodySmall" style={styles.muted}>
-              Live tracking will open when the driver starts the trip.
-            </Text>
-          </View>
-        )}
+          <Pressable style={styles.ctaBanner} onPress={onStartTrip}>
+            <MaterialCommunityIcons name="car" size={18} color="#FFFFFF" />
+            <Text style={styles.ctaText}>I'm on my way</Text>
+          </Pressable>
+        ) : null}
 
         <View style={styles.inputRow}>
           <RNTextInput
@@ -180,22 +239,20 @@ function MessageRow({ message, mine }: { message: ChatMessage; mine: boolean }) 
         <Avatar
           uri={message.senderProfilePicUri}
           firstName={message.senderFirstName}
-          size={28}
+          size={24}
         />
       ) : null}
-      <View
-        style={[
-          styles.bubble,
-          mine ? styles.bubbleMine : styles.bubbleOther,
-        ]}
-      >
+      <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleOther]}>
         {!mine ? (
           <Text variant="labelSmall" style={styles.senderName}>
             {message.senderFirstName}
           </Text>
         ) : null}
         <Text style={mine ? styles.textMine : styles.textOther}>{message.text}</Text>
-        <Text variant="labelSmall" style={[styles.time, mine ? styles.timeMine : styles.timeOther]}>
+        <Text
+          variant="labelSmall"
+          style={[styles.time, mine ? styles.timeMine : styles.timeOther]}
+        >
           {time}
         </Text>
       </View>
@@ -204,22 +261,26 @@ function MessageRow({ message, mine }: { message: ChatMessage; mine: boolean }) 
 }
 
 const styles = StyleSheet.create({
-  header: {
+  statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    padding: spacing.md,
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: 12,
     backgroundColor: colors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surface,
+    marginRight: spacing.sm,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.card,
   },
-  statusLine: {
-    marginTop: 2,
+  headline: {
+    fontWeight: '600',
   },
   messages: {
     padding: spacing.md,
@@ -247,7 +308,7 @@ const styles = StyleSheet.create({
   bubble: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderRadius: 16,
+    borderRadius: 18,
     flexShrink: 1,
   },
   bubbleMine: {
@@ -264,13 +325,16 @@ const styles = StyleSheet.create({
   },
   textMine: {
     color: '#FFFFFF',
+    fontSize: 15,
   },
   textOther: {
     color: colors.text,
+    fontSize: 15,
   },
   time: {
     marginTop: 4,
     alignSelf: 'flex-end',
+    fontSize: 10,
   },
   timeMine: {
     color: '#E6F3E8',
@@ -289,19 +353,7 @@ const styles = StyleSheet.create({
   ctaText: {
     color: '#FFFFFF',
     fontWeight: '700',
-  },
-  driverCta: {
-    padding: spacing.md,
-    backgroundColor: colors.card,
-    borderTopWidth: 1,
-    borderTopColor: colors.surface,
-  },
-  waitingNote: {
-    padding: spacing.sm,
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderTopWidth: 1,
-    borderTopColor: colors.surface,
+    fontSize: 15,
   },
   inputRow: {
     flexDirection: 'row',
