@@ -1,14 +1,15 @@
 import { MD3LightTheme } from 'react-native-paper';
 
 export const colors = {
-  primary: '#2E7D32',
+  primary: '#34773D',
   secondary: '#0288D1',
   background: '#FFFFFF',
   surface: '#F5F5F5',
+  cream: '#F2EEE3',
   text: '#1A1A1A',
   muted: '#6B6B6B',
   danger: '#C62828',
-  success: '#2E7D32',
+  success: '#34773D',
   warning: '#F9A825',
 };
 
