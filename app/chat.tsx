@@ -54,6 +54,7 @@ export default function Chat() {
   const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState('');
   const [leaveOpen, setLeaveOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
   const isDriver = useMemo(
@@ -62,6 +63,7 @@ export default function Chat() {
   );
 
   const canLeave = ride?.driverStatus === 'preparing' && !isDriver;
+  const canCancel = ride?.driverStatus === 'preparing' && isDriver;
   const chatLocked = ride?.driverStatus === 'to_destination' || ride?.driverStatus === 'arrived';
 
   useEffect(() => {
@@ -154,6 +156,18 @@ export default function Chat() {
             sentAt: Date.now(),
           },
         });
+        dispatch({
+          type: 'SEND_MESSAGE',
+          rideId,
+          message: {
+            id: `m_sys_otw_${Date.now()}`,
+            senderId: 'system',
+            senderFirstName: 'System',
+            text: `${driverFirstName} is on the way to the pickup`,
+            sentAt: Date.now(),
+            isSystem: true,
+          },
+        });
         dispatch({ type: 'SET_DRIVER_STATUS', rideId, status: 'to_pickup' });
       }, AUTO_START_DELAY_MS),
     );
@@ -166,9 +180,13 @@ export default function Chat() {
 
   useEffect(() => {
     if (chatLocked && ride) {
-      router.replace('/(rider)/active-ride');
+      if (isDriver) {
+        router.replace({ pathname: '/(driver)/active-ride', params: { id: ride.id } });
+      } else {
+        router.replace('/(rider)/active-ride');
+      }
     }
-  }, [chatLocked, ride]);
+  }, [chatLocked, ride, isDriver]);
 
   if (!ride) {
     return (
@@ -201,7 +219,37 @@ export default function Chat() {
   };
 
   const onStartTrip = () => {
+    dispatch({
+      type: 'SEND_MESSAGE',
+      rideId: ride.id,
+      message: {
+        id: `m_sys_otw_${Date.now()}`,
+        senderId: 'system',
+        senderFirstName: 'System',
+        text: `${currentUser.firstName} is on the way to the pickup`,
+        sentAt: Date.now(),
+        isSystem: true,
+      },
+    });
     dispatch({ type: 'SET_DRIVER_STATUS', rideId: ride.id, status: 'to_pickup' });
+  };
+
+  const onCancelRide = () => {
+    dispatch({
+      type: 'SEND_MESSAGE',
+      rideId: ride.id,
+      message: {
+        id: `m_sys_cancel_${Date.now()}`,
+        senderId: 'system',
+        senderFirstName: 'System',
+        text: 'Driver has cancelled the ride',
+        sentAt: Date.now(),
+        isSystem: true,
+      },
+    });
+    dispatch({ type: 'CANCEL_RIDE', rideId: ride.id });
+    setCancelOpen(false);
+    router.replace('/(tabs)');
   };
 
   const onOpenTracking = () => {
@@ -278,6 +326,11 @@ export default function Chat() {
               Leave
             </Button>
           ) : null}
+          {canCancel ? (
+            <Button mode="text" compact textColor={colors.danger} onPress={() => setCancelOpen(true)}>
+              Cancel
+            </Button>
+          ) : null}
         </View>
 
         <FlatList
@@ -351,6 +404,22 @@ export default function Chat() {
             <Button onPress={() => setLeaveOpen(false)}>Stay</Button>
             <Button mode="contained" onPress={confirmLeave}>
               Leave
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+
+        <Dialog visible={cancelOpen} onDismiss={() => setCancelOpen(false)}>
+          <Dialog.Title>Cancel this ride?</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              Your riders will be told the trip is off. You can only cancel before you've
+              started heading to the pickup.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setCancelOpen(false)}>Keep ride</Button>
+            <Button mode="contained" buttonColor={colors.danger} onPress={onCancelRide}>
+              Cancel ride
             </Button>
           </Dialog.Actions>
         </Dialog>
