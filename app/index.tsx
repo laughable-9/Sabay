@@ -18,19 +18,19 @@ export default function Splash() {
             Sabay
           </Text>
           <Text variant="bodyLarge" style={styles.tagline}>
-            Carpool with Baguio, split fair by the tank.
+            Carpool with Baguio.
           </Text>
         </View>
 
         <View style={styles.actions}>
-          <Link href="/(tabs)" asChild>
+          <Link href="/signup" asChild>
             <Button mode="contained" contentStyle={styles.primaryContent}>
               Get Started
             </Button>
           </Link>
-          <Link href="/signup" asChild>
-            <Button mode="text">Sign Up (demo shell)</Button>
-          </Link>
+          <Text variant="bodySmall" style={styles.footnote}>
+            Sign up with a photo and your GCash number — takes a few seconds.
+          </Text>
         </View>
       </View>
     </>
@@ -70,5 +70,9 @@ const styles = StyleSheet.create({
   },
   primaryContent: {
     paddingVertical: spacing.xs,
+  },
+  footnote: {
+    color: colors.muted,
+    textAlign: 'center',
   },
 });
