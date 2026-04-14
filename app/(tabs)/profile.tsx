@@ -1,29 +1,62 @@
+import { useMemo } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
-import { Text, SegmentedButtons, Card } from 'react-native-paper';
+import { Card, Chip, SegmentedButtons, Text } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
+import { VerifiedBadge } from '../../components/VerifiedBadge';
+import { formatPHP } from '../../utils/pricing';
+import { formatDepartureTime } from '../../utils/format';
 import { colors, spacing } from '../../constants/theme';
 import type { Role } from '../../utils/types';
 
 export default function Profile() {
   const { state, dispatch, currentUser } = useApp();
 
+  const history = useMemo(
+    () =>
+      state.rides
+        .filter(
+          (r) =>
+            r.status === 'completed' &&
+            (r.driverId === currentUser.id ||
+              r.passengers.some((p) => p.userId === currentUser.id)),
+        )
+        .sort((a, b) => b.departureTime - a.departureTime),
+    [state.rides, currentUser.id],
+  );
+
+  const contributions = useMemo(
+    () => state.gasPrices.filter((g) => g.submittedByUserId === currentUser.id).length,
+    [state.gasPrices, currentUser.id],
+  );
+
   return (
     <>
       <Stack.Screen options={{ title: 'Profile' }} />
-      <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.container}>
         <Card style={styles.card}>
           <Card.Content>
-            <Text variant="titleLarge">{currentUser.firstName}</Text>
+            <View style={styles.headerRow}>
+              <Text variant="titleLarge">{currentUser.firstName}</Text>
+              {currentUser.verified ? <VerifiedBadge /> : null}
+            </View>
             <Text variant="bodyMedium" style={styles.muted}>
-              {currentUser.verified ? 'Verified' : 'Unverified'} · {currentUser.rating.toFixed(1)} ★ ·{' '}
-              {currentUser.completedRides} rides
+              {currentUser.rating.toFixed(1)} ★ · {currentUser.completedRides + history.length} rides
             </Text>
+            {contributions > 0 ? (
+              <View style={styles.badgeRow}>
+                <MaterialCommunityIcons name="gas-station" size={14} color={colors.warning} />
+                <Text variant="labelMedium" style={styles.contributor}>
+                  Community Contributor · {contributions} price{contributions === 1 ? '' : 's'} submitted
+                </Text>
+              </View>
+            ) : null}
           </Card.Content>
         </Card>
 
         <View style={styles.section}>
-          <Text variant="labelLarge" style={styles.label}>
+          <Text variant="labelLarge" style={styles.sectionLabel}>
             Active role
           </Text>
           <SegmentedButtons
@@ -35,28 +68,82 @@ export default function Profile() {
             ]}
           />
           <Text variant="bodySmall" style={styles.hint}>
-            Switch roles to see the other side of the demo. Real signup picks this once.
+            Switch roles to demo the other side of the app.
           </Text>
         </View>
-      </View>
+
+        <View style={styles.section}>
+          <Text variant="labelLarge" style={styles.sectionLabel}>
+            Ride history
+          </Text>
+          {history.length === 0 ? (
+            <Text variant="bodyMedium" style={styles.muted}>
+              No completed rides yet. Finish one from the Home tab.
+            </Text>
+          ) : (
+            history.map((ride) => {
+              const isDriver = ride.driverId === currentUser.id;
+              return (
+                <Card key={ride.id} style={styles.historyCard}>
+                  <Card.Content>
+                    <View style={styles.historyHeader}>
+                      <Text variant="titleSmall">
+                        {ride.from} → {ride.to}
+                      </Text>
+                      <Chip compact>{isDriver ? 'Drove' : 'Rode'}</Chip>
+                    </View>
+                    <Text variant="bodySmall" style={styles.muted}>
+                      {formatDepartureTime(ride.departureTime)} · {ride.distanceKm} km ·{' '}
+                      {formatPHP(ride.pricePerPerson)}
+                    </Text>
+                  </Card.Content>
+                </Card>
+              );
+            })
+          )}
+        </View>
+      </ScrollView>
     </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: spacing.lg,
     gap: spacing.lg,
+    paddingBottom: spacing.xl,
   },
   card: {
     backgroundColor: colors.surface,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  contributor: {
+    color: colors.warning,
+    fontWeight: '600',
+  },
   section: {
     gap: spacing.sm,
   },
-  label: {
+  sectionLabel: {
     color: colors.muted,
+  },
+  historyCard: {
+    backgroundColor: colors.background,
+  },
+  historyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   muted: {
     color: colors.muted,
@@ -64,6 +151,5 @@ const styles = StyleSheet.create({
   },
   hint: {
     color: colors.muted,
-    marginTop: spacing.xs,
   },
 });
