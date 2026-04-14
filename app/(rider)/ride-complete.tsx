@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Button, Card, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -33,7 +33,16 @@ export default function RiderRideComplete() {
   return (
     <>
       <Stack.Screen options={{ title: 'Ride Complete' }} />
-      <ScrollView contentContainerStyle={styles.container}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={96}
+      >
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+      >
         <View style={styles.hero}>
           <MaterialCommunityIcons
             name="check-circle"
@@ -94,6 +103,7 @@ export default function RiderRideComplete() {
           Back to Home
         </Button>
       </ScrollView>
+      </KeyboardAvoidingView>
     </>
   );
 }

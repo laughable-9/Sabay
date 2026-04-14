@@ -91,6 +91,11 @@ Platform fee = max(PHP 10, 5% of fare). Terrain multiplier defaults to 1.0, bump
 
 Per PRD §3.3, the verification flow must treat ID photos, licenses, selfies, and OR/CR as **ephemeral**: captured, used for verification, then deleted. In demo code this means storing them in AsyncStorage only while verification is "pending", then clearing the URIs once status flips to approved. Other users must never see raw phone numbers, emails, full names, unmasked plate numbers, or license numbers — only first name, masked plate (last 3 chars), verified badge, rating.
 
+## UI invariants (don't regress)
+
+- **Keyboard must never cover inputs.** Every screen with a `TextInput` (or `Searchbar`, or anything that raises the keyboard) must wrap its scroll area in a `KeyboardAvoidingView` with `behavior={Platform.OS === 'ios' ? 'padding' : undefined}` and a `keyboardVerticalOffset` that accounts for the stack header (use `96` for screens inside the root stack — works for both the rider/driver stacks and the auth stack). The inner `ScrollView` gets `keyboardShouldPersistTaps="handled"` and `automaticallyAdjustKeyboardInsets`. This applies to signup, verify-driver, create-ride, post-request, ride-complete's comment box, and any future form. Check it on an iPhone in Expo Go — the last input should be visible with the keyboard open.
+- **No `(group)` labels leaking into headers.** `app/_layout.tsx` must explicitly set `headerShown: false` for each route group it renders (`(tabs)`, `(auth)`, `(rider)`, `(driver)`). Inner `_layout.tsx` files inside those groups own their own Stack and per-screen titles. Never leave a bare `<Stack />` at the root — route-group folder names will leak into the back-button label and header title as `(rider)` / `(driver)` / etc. When adding a new route group under `app/`, add its `<Stack.Screen name="(group)" options={{ headerShown: false }} />` entry to the root layout in the same PR.
+
 ## Workflow rules
 
 - **Never push to `main` or merge to `main` without explicit user consent.** Work lands on `dev`; user decides when to promote.
