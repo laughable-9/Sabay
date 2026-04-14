@@ -34,6 +34,37 @@ export default function Profile() {
     [state.gasPrices, currentUser.id],
   );
 
+  const driverStats = useMemo(() => {
+    let offset = 0;
+    let ridersServed = 0;
+    let tripsDriven = 0;
+    for (const ride of state.rides) {
+      if (ride.driverId !== currentUser.id) continue;
+      if (ride.status !== 'completed') continue;
+      tripsDriven += 1;
+      for (const p of ride.passengers) {
+        if (p.paymentReceived) {
+          offset += ride.pricePerPerson;
+          ridersServed += 1;
+        }
+      }
+    }
+    return { offset, ridersServed, tripsDriven };
+  }, [state.rides, currentUser.id]);
+
+  const riderStats = useMemo(() => {
+    let timesRidden = 0;
+    let kmSaved = 0;
+    for (const ride of state.rides) {
+      if (ride.status !== 'completed') continue;
+      if (ride.passengers.some((p) => p.userId === currentUser.id)) {
+        timesRidden += 1;
+        kmSaved += ride.distanceKm;
+      }
+    }
+    return { timesRidden, kmSaved };
+  }, [state.rides, currentUser.id]);
+
   return (
     <>
       <Stack.Screen options={{ title: 'Profile' }} />
@@ -68,6 +99,40 @@ export default function Profile() {
             ) : null}
           </Card.Content>
         </Card>
+
+        {driverStats.tripsDriven > 0 ? (
+          <Card style={styles.statsCard}>
+            <Card.Content>
+              <Text variant="labelLarge" style={styles.muted}>
+                Fuel cost offset (as driver)
+              </Text>
+              <Text variant="displaySmall" style={styles.statValue}>
+                {formatPHP(driverStats.offset)}
+              </Text>
+              <Text variant="bodySmall" style={styles.hint}>
+                From {driverStats.ridersServed} rider
+                {driverStats.ridersServed === 1 ? '' : 's'} across {driverStats.tripsDriven} completed
+                {driverStats.tripsDriven === 1 ? ' trip' : ' trips'}.
+              </Text>
+            </Card.Content>
+          </Card>
+        ) : null}
+
+        {riderStats.timesRidden > 0 ? (
+          <Card style={styles.statsCard}>
+            <Card.Content>
+              <Text variant="labelLarge" style={styles.muted}>
+                Rides shared (as rider)
+              </Text>
+              <Text variant="displaySmall" style={styles.statValue}>
+                {riderStats.timesRidden}
+              </Text>
+              <Text variant="bodySmall" style={styles.hint}>
+                {riderStats.kmSaved.toFixed(0)} km carpooled instead of solo.
+              </Text>
+            </Card.Content>
+          </Card>
+        ) : null}
 
         <View style={styles.section}>
           <Text variant="labelLarge" style={styles.sectionLabel}>
@@ -170,6 +235,14 @@ const styles = StyleSheet.create({
   },
   historyCard: {
     backgroundColor: colors.card,
+  },
+  statsCard: {
+    backgroundColor: colors.card,
+  },
+  statValue: {
+    color: colors.primary,
+    fontWeight: '700',
+    marginTop: spacing.xs,
   },
   historyHeader: {
     flexDirection: 'row',
