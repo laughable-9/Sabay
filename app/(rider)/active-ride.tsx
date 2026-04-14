@@ -6,6 +6,7 @@ import { useApp } from '../../context/AppContext';
 import { SabayMap } from '../../components/SabayMap';
 import { PassengerBadge } from '../../components/PassengerBadge';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
+import { Avatar } from '../../components/Avatar';
 import { useRideSimulation } from '../../hooks/useRideSimulation';
 import { shortToken } from '../../utils/rideSimulation';
 import { formatPHP } from '../../utils/pricing';
@@ -55,14 +56,23 @@ export default function RiderActiveRide() {
 
         <Card style={styles.infoCard}>
           <Card.Content>
-            <View style={styles.driverRow}>
-              <Text variant="titleMedium">{activeRide.driverFirstName}</Text>
-              {activeRide.driverVerified ? <VerifiedBadge compact /> : null}
-              <Text variant="bodySmall" style={styles.muted}>
-                · {activeRide.vehicle.make} {activeRide.vehicle.model}
-              </Text>
+            <View style={styles.driverHeader}>
+              <Avatar
+                uri={activeRide.driverProfilePicUri}
+                firstName={activeRide.driverFirstName}
+                size={44}
+              />
+              <View style={{ flex: 1 }}>
+                <View style={styles.driverRow}>
+                  <Text variant="titleMedium">{activeRide.driverFirstName}</Text>
+                  {activeRide.driverVerified ? <VerifiedBadge compact /> : null}
+                </View>
+                <Text variant="bodySmall" style={styles.muted}>
+                  {activeRide.vehicle.make} {activeRide.vehicle.model}
+                </Text>
+              </View>
             </View>
-            <Text variant="bodyMedium">
+            <Text variant="bodyMedium" style={styles.routeLine}>
               {activeRide.from} → {activeRide.to}
             </Text>
             <View style={styles.etaRow}>
@@ -102,13 +112,21 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     margin: spacing.md,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
+  },
+  driverHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.sm,
   },
   driverRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    marginBottom: spacing.xs,
+  },
+  routeLine: {
+    marginTop: spacing.xs,
   },
   etaRow: {
     flexDirection: 'row',

@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
 import { StarRating } from '../../components/StarRating';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
+import { Avatar } from '../../components/Avatar';
 import { formatPHP } from '../../utils/pricing';
 import { estimateCO2SavedKg, formatKg } from '../../utils/impact';
 import { colors, spacing } from '../../constants/theme';
@@ -59,6 +60,11 @@ export default function RiderRideComplete() {
         <Card style={styles.card}>
           <Card.Content>
             <View style={styles.driverRow}>
+              <Avatar
+                uri={ride.driverProfilePicUri}
+                firstName={ride.driverFirstName}
+                size={40}
+              />
               <Text variant="titleMedium">Rate {ride.driverFirstName}</Text>
               {ride.driverVerified ? <VerifiedBadge compact /> : null}
             </View>
@@ -126,7 +132,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
   },
   statsGrid: {
     flexDirection: 'row',

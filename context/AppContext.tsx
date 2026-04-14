@@ -6,22 +6,29 @@ import {
   useReducer,
   type ReactNode,
 } from 'react';
-import { MOCK_GAS_PRICES, MOCK_RIDES, MOCK_USERS } from '../utils/mockData';
+import {
+  MOCK_GAS_PRICES,
+  MOCK_RIDES,
+  MOCK_RIDE_REQUESTS,
+  MOCK_USERS,
+} from '../utils/mockData';
 import { markOutliers } from '../utils/gasPrice';
 import { getJSON, setJSON } from '../utils/storage';
 import type {
   GasPriceSubmission,
   Passenger,
   Ride,
+  RideRequest,
   Role,
   User,
 } from '../utils/types';
 
-const STORAGE_KEY = 'sabay.appState.v2';
+const STORAGE_KEY = 'sabay.appState.v4';
 
 export type AppState = {
   users: User[];
   rides: Ride[];
+  rideRequests: RideRequest[];
   gasPrices: GasPriceSubmission[];
   currentUserId: string;
   role: Role;
@@ -32,6 +39,7 @@ export type AppState = {
 const INITIAL_STATE: AppState = {
   users: MOCK_USERS,
   rides: MOCK_RIDES,
+  rideRequests: MOCK_RIDE_REQUESTS,
   gasPrices: markOutliers(MOCK_GAS_PRICES),
   currentUserId: 'u_self',
   role: 'driver',
@@ -42,11 +50,15 @@ const INITIAL_STATE: AppState = {
 type Action =
   | { type: 'HYDRATE'; payload: Partial<AppState> }
   | { type: 'SET_ROLE'; role: Role }
+  | { type: 'SET_PROFILE_PIC'; uri: string }
   | { type: 'ADD_RIDE'; ride: Ride }
   | { type: 'JOIN_RIDE'; rideId: string; passenger: Passenger }
   | { type: 'PICKUP_PASSENGER'; rideId: string; passengerId: string }
   | { type: 'END_RIDE'; rideId: string }
-  | { type: 'SUBMIT_GAS_PRICE'; submission: GasPriceSubmission };
+  | { type: 'SUBMIT_GAS_PRICE'; submission: GasPriceSubmission }
+  | { type: 'POST_REQUEST'; request: RideRequest }
+  | { type: 'CANCEL_REQUEST'; requestId: string }
+  | { type: 'FULFILL_REQUEST'; requestId: string; rideId: string };
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
@@ -55,6 +67,13 @@ function reducer(state: AppState, action: Action): AppState {
 
     case 'SET_ROLE':
       return { ...state, role: action.role };
+
+    case 'SET_PROFILE_PIC': {
+      const users = state.users.map((u) =>
+        u.id === state.currentUserId ? { ...u, profilePicUri: action.uri } : u,
+      );
+      return { ...state, users };
+    }
 
     case 'ADD_RIDE':
       return { ...state, rides: [action.ride, ...state.rides] };
@@ -95,6 +114,25 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, gasPrices };
     }
 
+    case 'POST_REQUEST':
+      return { ...state, rideRequests: [action.request, ...state.rideRequests] };
+
+    case 'CANCEL_REQUEST': {
+      const rideRequests = state.rideRequests.map((r) =>
+        r.id === action.requestId ? { ...r, status: 'cancelled' as const } : r,
+      );
+      return { ...state, rideRequests };
+    }
+
+    case 'FULFILL_REQUEST': {
+      const rideRequests = state.rideRequests.map((r) =>
+        r.id === action.requestId
+          ? { ...r, status: 'matched' as const, matchedRideId: action.rideId }
+          : r,
+      );
+      return { ...state, rideRequests };
+    }
+
     default:
       return state;
   }
@@ -109,7 +147,10 @@ type AppContextValue = {
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-type PersistedState = Pick<AppState, 'rides' | 'gasPrices' | 'role' | 'activeRideId'>;
+type PersistedState = Pick<
+  AppState,
+  'users' | 'rides' | 'rideRequests' | 'gasPrices' | 'role' | 'activeRideId'
+>;
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
@@ -129,13 +170,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!state.hydrated) return;
     const toPersist: PersistedState = {
+      users: state.users,
       rides: state.rides,
+      rideRequests: state.rideRequests,
       gasPrices: state.gasPrices,
       role: state.role,
       activeRideId: state.activeRideId,
     };
     setJSON(STORAGE_KEY, toPersist);
-  }, [state.hydrated, state.rides, state.gasPrices, state.role, state.activeRideId]);
+  }, [
+    state.hydrated,
+    state.users,
+    state.rides,
+    state.rideRequests,
+    state.gasPrices,
+    state.role,
+    state.activeRideId,
+  ]);
 
   const value = useMemo<AppContextValue>(() => {
     const currentUser = state.users.find((u) => u.id === state.currentUserId) ?? state.users[0];

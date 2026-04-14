@@ -10,6 +10,8 @@ export type User = {
   isDriver: boolean;
   completedRides: number;
   vehicle?: Vehicle;
+  profilePicUri?: string;
+  joinedAt?: number;
 };
 
 export type Vehicle = {
@@ -32,6 +34,7 @@ export type Passenger = {
   verified: boolean;
   status: PassengerStatus;
   joinedAt: number;
+  profilePicUri?: string;
 };
 
 export type RideStatus = 'open' | 'active' | 'completed' | 'cancelled';
@@ -42,6 +45,9 @@ export type Ride = {
   driverFirstName: string;
   driverRating: number;
   driverVerified: boolean;
+  driverProfilePicUri?: string;
+  driverCompletedRides?: number;
+  driverJoinedAt?: number;
   vehicle: Pick<Vehicle, 'make' | 'model' | 'color' | 'plateNumber'>;
   from: string;
   to: string;
@@ -55,6 +61,26 @@ export type Ride = {
   status: RideStatus;
   passengers: Passenger[];
   notes?: string;
+  createdAt: number;
+};
+
+export type RideRequestStatus = 'open' | 'matched' | 'cancelled';
+
+export type RideRequest = {
+  id: string;
+  riderId: string;
+  riderFirstName: string;
+  riderVerified: boolean;
+  riderProfilePicUri?: string;
+  from: string;
+  to: string;
+  distanceKm: number;
+  durationMin: number;
+  desiredDepartureTime: number;
+  maxFare?: number;
+  notes?: string;
+  status: RideRequestStatus;
+  matchedRideId?: string;
   createdAt: number;
 };
 

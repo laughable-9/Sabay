@@ -1,5 +1,6 @@
 import { View, StyleSheet } from 'react-native';
 import { Card, Text } from 'react-native-paper';
+import { Avatar } from './Avatar';
 import { VerifiedBadge } from './VerifiedBadge';
 import { formatPHP } from '../utils/pricing';
 import { formatDepartureTime } from '../utils/format';
@@ -20,11 +21,16 @@ export function RideCard({ ride, onPress }: Props) {
       <Card.Content>
         <View style={styles.header}>
           <View style={styles.driverRow}>
-            <Text variant="titleMedium">{ride.driverFirstName}</Text>
-            {ride.driverVerified ? <VerifiedBadge compact /> : null}
-            <Text variant="bodySmall" style={styles.muted}>
-              · {ride.driverRating.toFixed(1)} ★
-            </Text>
+            <Avatar uri={ride.driverProfilePicUri} firstName={ride.driverFirstName} size={36} />
+            <View style={styles.driverMeta}>
+              <View style={styles.nameRow}>
+                <Text variant="titleMedium">{ride.driverFirstName}</Text>
+                {ride.driverVerified ? <VerifiedBadge compact /> : null}
+              </View>
+              <Text variant="bodySmall" style={styles.muted}>
+                {ride.driverRating.toFixed(1)} ★
+              </Text>
+            </View>
           </View>
           <Text variant="titleMedium" style={styles.price}>
             {formatPHP(ride.pricePerPerson)}
@@ -50,7 +56,7 @@ export function RideCard({ ride, onPress }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
   },
   header: {
     flexDirection: 'row',
@@ -60,15 +66,23 @@ const styles = StyleSheet.create({
   driverRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
+  },
+  driverMeta: {
+    gap: 2,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.xs,
   },
   route: {
-    marginTop: spacing.xs,
+    marginTop: spacing.md,
     fontWeight: '600',
   },
   muted: {
     color: colors.muted,
-    marginTop: spacing.xs,
+    marginTop: 2,
   },
   notes: {
     color: colors.muted,

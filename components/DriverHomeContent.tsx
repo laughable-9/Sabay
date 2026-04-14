@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Button, Card, Chip, Text } from 'react-native-paper';
+import { Avatar } from './Avatar';
 import { useApp } from '../context/AppContext';
 import { formatPHP } from '../utils/pricing';
 import { formatDepartureTime } from '../utils/format';
 import { colors, spacing } from '../constants/theme';
-import type { Ride } from '../utils/types';
+import type { Ride, RideRequest } from '../utils/types';
 
 export function DriverHomeContent() {
   const { state, currentUser } = useApp();
@@ -19,8 +20,17 @@ export function DriverHomeContent() {
     [state.rides, currentUser.id],
   );
 
+  const openRequests = useMemo(
+    () =>
+      state.rideRequests
+        .filter((r) => r.status === 'open' && r.riderId !== currentUser.id)
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, 3),
+    [state.rideRequests, currentUser.id],
+  );
+
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
         <Text variant="headlineSmall" style={styles.title}>
           Hi {currentUser.firstName}
@@ -45,14 +55,26 @@ export function DriverHomeContent() {
           </Text>
         </View>
       ) : (
-        <FlatList
-          data={myRides}
-          keyExtractor={(r) => r.id}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => <MyRideCard ride={item} />}
-        />
+        <View style={styles.list}>
+          {myRides.map((ride) => (
+            <MyRideCard key={ride.id} ride={ride} />
+          ))}
+        </View>
       )}
-    </View>
+
+      {openRequests.length > 0 ? (
+        <View style={styles.section}>
+          <Text variant="labelLarge" style={styles.sectionLabel}>
+            Open requests near you
+          </Text>
+          <View style={styles.list}>
+            {openRequests.map((req) => (
+              <RequestPrompt key={req.id} request={req} />
+            ))}
+          </View>
+        </View>
+      ) : null}
+    </ScrollView>
   );
 }
 
@@ -89,11 +111,52 @@ function MyRideCard({ ride }: { ride: Ride }) {
   );
 }
 
+function RequestPrompt({ request }: { request: RideRequest }) {
+  const timeLabel = formatDepartureTime(request.desiredDepartureTime);
+
+  const onMatch = () => {
+    router.push({
+      pathname: '/(driver)/create-ride',
+      params: {
+        requestId: request.id,
+        from: request.from,
+        to: request.to,
+      },
+    });
+  };
+
+  return (
+    <Card style={styles.card}>
+      <Card.Content>
+        <View style={styles.requestHeader}>
+          <Avatar uri={request.riderProfilePicUri} firstName={request.riderFirstName} size={36} />
+          <View style={{ flex: 1 }}>
+            <Text variant="titleSmall">
+              {request.riderFirstName} needs a ride
+            </Text>
+            <Text variant="bodySmall" style={styles.muted}>
+              {request.from} → {request.to} · {timeLabel}
+            </Text>
+          </View>
+        </View>
+        {request.maxFare ? (
+          <Text variant="bodySmall" style={styles.muted}>
+            Willing to pay up to {formatPHP(request.maxFare)}
+          </Text>
+        ) : null}
+        <Button mode="contained-tonal" compact onPress={onMatch} style={styles.matchBtn}>
+          Post matching ride
+        </Button>
+      </Card.Content>
+    </Card>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: spacing.lg,
     gap: spacing.md,
+    paddingBottom: spacing.xl,
   },
   header: {
     gap: spacing.xs,
@@ -107,11 +170,16 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: spacing.sm,
-    paddingBottom: spacing.lg,
+  },
+  section: {
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  sectionLabel: {
+    color: colors.muted,
   },
   card: {
-    backgroundColor: colors.surface,
-    marginBottom: spacing.sm,
+    backgroundColor: colors.card,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -124,12 +192,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: spacing.sm,
   },
+  requestHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
   muted: {
     color: colors.muted,
-    marginTop: spacing.xs,
+    marginTop: 2,
   },
   price: {
     color: colors.primary,
     fontWeight: '700',
+  },
+  matchBtn: {
+    alignSelf: 'flex-end',
+    marginTop: spacing.sm,
   },
 });

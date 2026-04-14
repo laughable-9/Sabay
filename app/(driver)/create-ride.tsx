@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Stack, router } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Button, SegmentedButtons, Text, TextInput } from 'react-native-paper';
 import { useApp } from '../../context/AppContext';
 import { PriceBreakdown } from '../../components/PriceBreakdown';
@@ -15,11 +15,13 @@ const HOUR = 60 * 60 * 1000;
 
 export default function CreateRide() {
   const { state, dispatch, currentUser } = useApp();
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
+  const params = useLocalSearchParams<{ requestId?: string; from?: string; to?: string }>();
+  const [from, setFrom] = useState(params.from ?? '');
+  const [to, setTo] = useState(params.to ?? '');
   const [seats, setSeats] = useState('3');
   const [notes, setNotes] = useState('');
   const [departureType, setDepartureType] = useState<'now' | 'scheduled'>('now');
+  const fulfillingRequestId = params.requestId;
 
   const fuelPrice = useMemo(
     () => aggregateGasPrices(state.gasPrices, 'unleaded').medianPrice,
@@ -56,6 +58,9 @@ export default function CreateRide() {
       driverFirstName: currentUser.firstName,
       driverRating: currentUser.rating,
       driverVerified: currentUser.verified,
+      driverProfilePicUri: currentUser.profilePicUri,
+      driverCompletedRides: currentUser.completedRides,
+      driverJoinedAt: currentUser.joinedAt,
       vehicle: {
         make: vehicle.make,
         model: vehicle.model,
@@ -77,6 +82,9 @@ export default function CreateRide() {
       createdAt: now,
     };
     dispatch({ type: 'ADD_RIDE', ride });
+    if (fulfillingRequestId) {
+      dispatch({ type: 'FULFILL_REQUEST', requestId: fulfillingRequestId, rideId: ride.id });
+    }
     router.back();
   };
 
@@ -84,6 +92,13 @@ export default function CreateRide() {
     <>
       <Stack.Screen options={{ title: 'Create Ride' }} />
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        {fulfillingRequestId ? (
+          <View style={styles.banner}>
+            <Text variant="labelMedium" style={styles.bannerText}>
+              Fulfilling a rider request — posting this ride will mark it matched.
+            </Text>
+          </View>
+        ) : null}
         <TextInput
           label="From"
           value={from}
@@ -173,6 +188,15 @@ const styles = StyleSheet.create({
   },
   warning: {
     color: colors.danger,
+  },
+  banner: {
+    padding: spacing.md,
+    backgroundColor: '#E6F3E8',
+    borderRadius: 8,
+  },
+  bannerText: {
+    color: colors.primary,
+    fontWeight: '600',
   },
   submit: {
     marginTop: spacing.md,

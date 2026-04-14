@@ -1,13 +1,14 @@
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { Button, Card, Text } from 'react-native-paper';
+import { Button, Card, Chip, Text } from 'react-native-paper';
 import { useApp } from '../../context/AppContext';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
+import { Avatar } from '../../components/Avatar';
 import { PriceBreakdown } from '../../components/PriceBreakdown';
 import { calculateFare, formatPHP } from '../../utils/pricing';
 import { aggregateGasPrices } from '../../utils/gasPrice';
-import { maskPlate } from '../../utils/format';
+import { maskPlate, formatMonthYear } from '../../utils/format';
 import { colors, spacing } from '../../constants/theme';
 import type { Passenger } from '../../utils/types';
 
@@ -54,6 +55,7 @@ export default function RideDetails() {
       verified: currentUser.verified,
       status: 'waiting',
       joinedAt: Date.now(),
+      profilePicUri: currentUser.profilePicUri,
     };
     dispatch({ type: 'JOIN_RIDE', rideId: ride.id, passenger });
     router.replace('/(rider)/active-ride');
@@ -67,13 +69,32 @@ export default function RideDetails() {
       <ScrollView contentContainerStyle={styles.container}>
         <Card style={styles.card}>
           <Card.Content>
-            <View style={styles.driverRow}>
-              <Text variant="titleLarge">{ride.driverFirstName}</Text>
-              {ride.driverVerified ? <VerifiedBadge /> : null}
+            <View style={styles.driverCard}>
+              <Avatar
+                uri={ride.driverProfilePicUri}
+                firstName={ride.driverFirstName}
+                size={56}
+              />
+              <View style={{ flex: 1 }}>
+                <View style={styles.driverRow}>
+                  <Text variant="titleLarge">{ride.driverFirstName}</Text>
+                  {ride.driverVerified ? <VerifiedBadge compact /> : null}
+                </View>
+                <View style={styles.chipRow}>
+                  <Chip compact style={styles.licensedChip} textStyle={styles.licensedChipText}>
+                    Licensed Driver
+                  </Chip>
+                </View>
+              </View>
             </View>
-            <Text variant="bodyMedium" style={styles.muted}>
-              {ride.driverRating.toFixed(1)} ★ · {ride.vehicle.make} {ride.vehicle.model} ·{' '}
-              {ride.vehicle.color} · plate {maskPlate(ride.vehicle.plateNumber)}
+            <Text variant="bodyMedium" style={styles.statsLine}>
+              {ride.driverRating.toFixed(1)} ★ ·{' '}
+              {(ride.driverCompletedRides ?? 0)} rides
+              {ride.driverJoinedAt ? ` · Since ${formatMonthYear(ride.driverJoinedAt)}` : ''}
+            </Text>
+            <Text variant="bodySmall" style={styles.muted}>
+              {ride.vehicle.make} {ride.vehicle.model} · {ride.vehicle.color} · plate{' '}
+              {maskPlate(ride.vehicle.plateNumber)}
             </Text>
           </Card.Content>
         </Card>
@@ -134,12 +155,33 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
+  },
+  driverCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
   },
   driverRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    marginTop: spacing.xs,
+  },
+  licensedChip: {
+    backgroundColor: '#E6F3E8',
+    alignSelf: 'flex-start',
+  },
+  licensedChipText: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  statsLine: {
+    color: colors.text,
+    marginTop: spacing.sm,
   },
   section: {
     gap: spacing.xs,

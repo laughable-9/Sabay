@@ -5,6 +5,7 @@ import { Card, Chip, SegmentedButtons, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
+import { Avatar } from '../../components/Avatar';
 import { formatPHP } from '../../utils/pricing';
 import { formatDepartureTime } from '../../utils/format';
 import { colors, spacing } from '../../constants/theme';
@@ -37,13 +38,22 @@ export default function Profile() {
       <ScrollView contentContainerStyle={styles.container}>
         <Card style={styles.card}>
           <Card.Content>
-            <View style={styles.headerRow}>
-              <Text variant="titleLarge">{currentUser.firstName}</Text>
-              {currentUser.verified ? <VerifiedBadge /> : null}
+            <View style={styles.profileHeader}>
+              <Avatar
+                uri={currentUser.profilePicUri}
+                firstName={currentUser.firstName}
+                size={64}
+              />
+              <View style={{ flex: 1 }}>
+                <View style={styles.headerRow}>
+                  <Text variant="titleLarge">{currentUser.firstName}</Text>
+                  {currentUser.verified ? <VerifiedBadge /> : null}
+                </View>
+                <Text variant="bodyMedium" style={styles.muted}>
+                  {currentUser.rating.toFixed(1)} ★ · {currentUser.completedRides + history.length} rides
+                </Text>
+              </View>
             </View>
-            <Text variant="bodyMedium" style={styles.muted}>
-              {currentUser.rating.toFixed(1)} ★ · {currentUser.completedRides + history.length} rides
-            </Text>
             {contributions > 0 ? (
               <View style={styles.badgeRow}>
                 <MaterialCommunityIcons name="gas-station" size={14} color={colors.warning} />
@@ -114,7 +124,12 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
   },
   headerRow: {
     flexDirection: 'row',
@@ -138,7 +153,7 @@ const styles = StyleSheet.create({
     color: colors.muted,
   },
   historyCard: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.card,
   },
   historyHeader: {
     flexDirection: 'row',

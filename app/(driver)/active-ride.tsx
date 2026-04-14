@@ -4,6 +4,7 @@ import { Button, Card, Chip, Text } from 'react-native-paper';
 import { useApp } from '../../context/AppContext';
 import { PassengerBadge } from '../../components/PassengerBadge';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
+import { Avatar } from '../../components/Avatar';
 import { formatPHP } from '../../utils/pricing';
 import { formatDepartureTime } from '../../utils/format';
 import { colors, spacing } from '../../constants/theme';
@@ -113,6 +114,7 @@ function PassengerRow({
       <Card.Content>
         <View style={styles.rowHeader}>
           <View style={styles.rowName}>
+            <Avatar uri={passenger.profilePicUri} firstName={passenger.firstName} size={32} />
             <Text variant="titleSmall">{passenger.firstName}</Text>
             {passenger.verified ? <VerifiedBadge compact /> : null}
           </View>
@@ -140,7 +142,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   summary: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
   },
   summaryHeader: {
     flexDirection: 'row',
@@ -156,7 +158,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
   },
   row: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.card,
   },
   rowHeader: {
     flexDirection: 'row',

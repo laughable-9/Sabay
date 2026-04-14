@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
 import { StarRating } from '../../components/StarRating';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
+import { Avatar } from '../../components/Avatar';
 import { formatPHP } from '../../utils/pricing';
 import { PLATFORM_FEE_PERCENT, PLATFORM_FEE_PHP } from '../../constants/config';
 import { colors, spacing } from '../../constants/theme';
@@ -73,6 +74,7 @@ export default function DriverRideComplete() {
               {ride.passengers.map((p) => (
                 <View key={p.id} style={styles.paxRow}>
                   <View style={styles.paxName}>
+                    <Avatar uri={p.profilePicUri} firstName={p.firstName} size={32} />
                     <Text variant="bodyLarge">{p.firstName}</Text>
                     {p.verified ? <VerifiedBadge compact /> : null}
                   </View>
@@ -129,7 +131,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
   },
   earnings: {
     color: colors.primary,

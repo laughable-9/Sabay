@@ -1,8 +1,15 @@
 import { calculateFare } from './pricing';
-import type { GasPriceSubmission, Ride, User } from './types';
+import type { GasPriceSubmission, Ride, RideRequest, User } from './types';
 
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
+const MONTH = 30 * DAY;
+
+function avatarUri(name: string, bg: string): string {
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${bg}&color=fff&bold=true&size=256`;
+}
+
+const NOW = Date.now();
 
 export const MOCK_USERS: User[] = [
   {
@@ -12,6 +19,8 @@ export const MOCK_USERS: User[] = [
     verified: true,
     isDriver: true,
     completedRides: 0,
+    profilePicUri: avatarUri('Kyle', '34773D'),
+    joinedAt: NOW - 2 * MONTH,
     vehicle: {
       make: 'Toyota',
       model: 'Vios',
@@ -30,6 +39,8 @@ export const MOCK_USERS: User[] = [
     verified: true,
     isDriver: true,
     completedRides: 47,
+    profilePicUri: avatarUri('Maria', 'D97706'),
+    joinedAt: NOW - 14 * MONTH,
     vehicle: {
       make: 'Honda',
       model: 'City',
@@ -48,6 +59,8 @@ export const MOCK_USERS: User[] = [
     verified: true,
     isDriver: true,
     completedRides: 22,
+    profilePicUri: avatarUri('Josh', '2563EB'),
+    joinedAt: NOW - 6 * MONTH,
     vehicle: {
       make: 'Mitsubishi',
       model: 'Mirage',
@@ -66,6 +79,8 @@ export const MOCK_USERS: User[] = [
     verified: true,
     isDriver: true,
     completedRides: 63,
+    profilePicUri: avatarUri('Ana', 'DB2777'),
+    joinedAt: NOW - 18 * MONTH,
     vehicle: {
       make: 'Hyundai',
       model: 'Accent',
@@ -84,6 +99,8 @@ export const MOCK_USERS: User[] = [
     verified: true,
     isDriver: false,
     completedRides: 15,
+    profilePicUri: avatarUri('Rico', '7C3AED'),
+    joinedAt: NOW - 4 * MONTH,
   },
   {
     id: 'u_bea',
@@ -92,6 +109,8 @@ export const MOCK_USERS: User[] = [
     verified: true,
     isDriver: false,
     completedRides: 31,
+    profilePicUri: avatarUri('Bea', '059669'),
+    joinedAt: NOW - 10 * MONTH,
   },
 ];
 
@@ -124,6 +143,9 @@ function mkRide(
     driverFirstName: driver.firstName,
     driverRating: driver.rating,
     driverVerified: driver.verified,
+    driverProfilePicUri: driver.profilePicUri,
+    driverCompletedRides: driver.completedRides,
+    driverJoinedAt: driver.joinedAt,
     vehicle: {
       make: driver.vehicle.make,
       model: driver.vehicle.model,
@@ -161,6 +183,46 @@ export const MOCK_RIDES: Ride[] = [
   mkRide('r8', josh, 'SM Baguio', 'SLU Maryheights', 6, 22, 7 * HOUR, 2, 'Going home after class.'),
 ];
 
+const rico = MOCK_USERS[4];
+const bea = MOCK_USERS[5];
+
+function mkRequest(
+  id: string,
+  rider: User,
+  from: string,
+  to: string,
+  distanceKm: number,
+  durationMin: number,
+  departureOffsetMs: number,
+  maxFare: number | undefined,
+  notes?: string,
+): RideRequest {
+  const now = Date.now();
+  return {
+    id,
+    riderId: rider.id,
+    riderFirstName: rider.firstName,
+    riderVerified: rider.verified,
+    riderProfilePicUri: rider.profilePicUri,
+    from,
+    to,
+    distanceKm,
+    durationMin,
+    desiredDepartureTime: now + departureOffsetMs,
+    maxFare,
+    notes,
+    status: 'open',
+    createdAt: now - 10 * 60 * 1000,
+  };
+}
+
+export const MOCK_RIDE_REQUESTS: RideRequest[] = [
+  mkRequest('req1', rico, 'Ambuklao', 'UP Baguio', 18, 50, 30 * 60 * 1000, 80, 'Morning class, please be on time.'),
+  mkRequest('req2', bea, 'La Trinidad', 'SM Baguio', 9, 28, 2 * HOUR, 45),
+  mkRequest('req3', rico, 'Session Road', 'Camp John Hay', 4, 14, 3 * HOUR, undefined, 'Flexible on timing.'),
+  mkRequest('req4', bea, 'UP Baguio', 'La Trinidad', 8, 25, 5 * HOUR, 40, 'Anyone heading home after 5pm?'),
+];
+
 function mkSubmission(
   id: string,
   offsetFromNowMs: number,
@@ -180,29 +242,30 @@ function mkSubmission(
   };
 }
 
-// Seed values approximate April 2026 DOE weekly ranges:
-//   Unleaded 91: ₱94.57 – ₱106.90/L
-//   Premium 95:  ₱94.07 – ₱107.40/L
-//   Diesel:      ₱128.01 – ₱132.20/L
+// Seed values span the published DOE weekly ranges for the week of
+// April 14-20, 2026 (source: fuelprice.ph):
+//   Unleaded 91: ₱94.57 – ₱106.90/L (range across 13 brands)
+//   Premium 95:  ₱94.07 – ₱107.40/L (range across 12 brands)
+//   Diesel:      ₱128.01 – ₱132.20/L (range across 13 brands)
 export const MOCK_GAS_PRICES: GasPriceSubmission[] = [
-  mkSubmission('g1', 2 * HOUR, 'unleaded', 100.2, 'u_maria', 'Shell Session Road'),
-  mkSubmission('g2', 5 * HOUR, 'unleaded', 101.5, 'u_josh', 'Petron Marcos Highway'),
-  mkSubmission('g3', 10 * HOUR, 'unleaded', 99.8, 'u_ana'),
-  mkSubmission('g4', 14 * HOUR, 'unleaded', 102.4, 'u_rico', 'Caltex Magsaysay'),
-  mkSubmission('g5', 20 * HOUR, 'unleaded', 100.0, 'u_bea'),
-  mkSubmission('g6', 1 * DAY, 'unleaded', 98.9, 'u_maria', 'Shell La Trinidad'),
-  mkSubmission('g7', 1.5 * DAY, 'unleaded', 101.0, 'u_josh'),
-  mkSubmission('g8', 2.5 * DAY, 'unleaded', 99.2, 'u_ana', 'Petron Marcos Highway'),
+  mkSubmission('g1', 2 * HOUR, 'unleaded', 101.2, 'u_maria', 'Shell Session Road'),
+  mkSubmission('g2', 5 * HOUR, 'unleaded', 106.4, 'u_josh', 'Petron Marcos Highway'),
+  mkSubmission('g3', 10 * HOUR, 'unleaded', 97.8, 'u_ana', 'Phoenix Kennon Road'),
+  mkSubmission('g4', 14 * HOUR, 'unleaded', 103.1, 'u_rico', 'Caltex Magsaysay'),
+  mkSubmission('g5', 20 * HOUR, 'unleaded', 95.2, 'u_bea', 'Seaoil La Trinidad'),
+  mkSubmission('g6', 1 * DAY, 'unleaded', 100.6, 'u_maria', 'Shell La Trinidad'),
+  mkSubmission('g7', 1.5 * DAY, 'unleaded', 105.9, 'u_josh', 'Cleanfuel Loakan'),
+  mkSubmission('g8', 2.5 * DAY, 'unleaded', 98.4, 'u_ana', 'Petron Marcos Highway'),
 
-  mkSubmission('g9', 3 * HOUR, 'premium', 103.5, 'u_maria', 'Shell Session Road'),
-  mkSubmission('g10', 8 * HOUR, 'premium', 104.2, 'u_bea', 'Caltex Magsaysay'),
-  mkSubmission('g11', 16 * HOUR, 'premium', 102.8, 'u_josh'),
-  mkSubmission('g12', 1.2 * DAY, 'premium', 105.0, 'u_ana', 'Shell La Trinidad'),
-  mkSubmission('g13', 2 * DAY, 'premium', 103.0, 'u_rico', 'Petron Marcos Highway'),
+  mkSubmission('g9', 3 * HOUR, 'premium', 107.1, 'u_maria', 'Shell Session Road'),
+  mkSubmission('g10', 8 * HOUR, 'premium', 103.9, 'u_bea', 'Caltex Magsaysay'),
+  mkSubmission('g11', 16 * HOUR, 'premium', 95.3, 'u_josh', 'Phoenix Kennon Road'),
+  mkSubmission('g12', 1.2 * DAY, 'premium', 105.6, 'u_ana', 'Shell La Trinidad'),
+  mkSubmission('g13', 2 * DAY, 'premium', 99.8, 'u_rico', 'Petron Marcos Highway'),
 
-  mkSubmission('g14', 4 * HOUR, 'diesel', 130.0, 'u_ana', 'Petron Marcos Highway'),
-  mkSubmission('g15', 12 * HOUR, 'diesel', 129.5, 'u_maria'),
-  mkSubmission('g16', 18 * HOUR, 'diesel', 131.2, 'u_josh', 'Caltex Magsaysay'),
-  mkSubmission('g17', 1.5 * DAY, 'diesel', 128.8, 'u_rico', 'Shell Session Road'),
-  mkSubmission('g18', 3 * DAY, 'diesel', 130.5, 'u_bea', 'Shell La Trinidad'),
+  mkSubmission('g14', 4 * HOUR, 'diesel', 131.8, 'u_ana', 'Petron Marcos Highway'),
+  mkSubmission('g15', 12 * HOUR, 'diesel', 128.4, 'u_maria', 'Phoenix Kennon Road'),
+  mkSubmission('g16', 18 * HOUR, 'diesel', 130.9, 'u_josh', 'Caltex Magsaysay'),
+  mkSubmission('g17', 1.5 * DAY, 'diesel', 129.2, 'u_rico', 'Shell Session Road'),
+  mkSubmission('g18', 3 * DAY, 'diesel', 132.0, 'u_bea', 'Shell La Trinidad'),
 ];
