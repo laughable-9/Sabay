@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Button, Card, Chip, Text } from 'react-native-paper';
@@ -15,6 +15,7 @@ import type { Passenger } from '../../utils/types';
 export default function RideDetails() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state, dispatch, currentUser } = useApp();
+  const [breakdownOpen, setBreakdownOpen] = useState(false);
 
   const ride = state.rides.find((r) => r.id === id);
 
@@ -124,10 +125,16 @@ export default function RideDetails() {
 
         {breakdown ? (
           <View style={styles.section}>
-            <Text variant="labelLarge" style={styles.label}>
-              Fare breakdown
-            </Text>
-            <PriceBreakdown breakdown={breakdown} />
+            <Button
+              mode="text"
+              icon={breakdownOpen ? 'chevron-up' : 'chevron-down'}
+              contentStyle={{ flexDirection: 'row-reverse' }}
+              style={styles.breakdownToggle}
+              onPress={() => setBreakdownOpen((v) => !v)}
+            >
+              {breakdownOpen ? 'Hide fare breakdown' : 'Show fare breakdown'}
+            </Button>
+            {breakdownOpen ? <PriceBreakdown breakdown={breakdown} /> : null}
           </View>
         ) : null}
 
@@ -200,5 +207,8 @@ const styles = StyleSheet.create({
   },
   submit: {
     marginTop: spacing.md,
+  },
+  breakdownToggle: {
+    alignSelf: 'flex-start',
   },
 });
