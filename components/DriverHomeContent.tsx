@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Button, Card, Chip, Text } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from './Avatar';
 import { useApp } from '../context/AppContext';
@@ -135,27 +136,28 @@ function RequestPrompt({ request }: { request: RideRequest }) {
   };
 
   return (
-    <Card style={styles.card}>
-      <Card.Content>
-        <View style={styles.requestHeader}>
-          <Avatar uri={request.riderProfilePicUri} firstName={request.riderFirstName} size={36} />
-          <View style={{ flex: 1 }}>
-            <Text variant="titleSmall">
-              {request.riderFirstName} needs a ride
-            </Text>
-            <Text variant="bodySmall" style={styles.muted}>
-              {request.from} → {request.to} · {timeLabel}
-            </Text>
-          </View>
-        </View>
-        {request.notes ? (
-          <Text variant="bodySmall" style={styles.muted} numberOfLines={2}>
-            “{request.notes}”
+    <Card style={styles.card} onPress={onMatch}>
+      <Card.Content style={styles.requestCardContent}>
+        <Avatar uri={request.riderProfilePicUri} firstName={request.riderFirstName} size={40} />
+        <View style={{ flex: 1 }}>
+          <Text variant="titleSmall">
+            {request.from} → {request.to}
           </Text>
-        ) : null}
-        <Button mode="contained-tonal" compact onPress={onMatch} style={styles.matchBtn}>
-          Post matching ride
-        </Button>
+          <Text variant="bodySmall" style={styles.muted}>
+            {request.riderFirstName} · {timeLabel}
+            {request.notes ? ` · "${request.notes}"` : ''}
+          </Text>
+        </View>
+        <View style={styles.requestCta}>
+          <Text variant="labelMedium" style={styles.offerText}>
+            Offer ride
+          </Text>
+          <MaterialCommunityIcons
+            name="chevron-right"
+            size={18}
+            color={colors.primary}
+          />
+        </View>
       </Card.Content>
     </Card>
   );
@@ -201,11 +203,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: spacing.sm,
   },
-  requestHeader: {
+  requestCardContent: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    marginBottom: spacing.xs,
+  },
+  requestCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  offerText: {
+    color: colors.primary,
+    fontWeight: '700',
   },
   muted: {
     color: colors.muted,
@@ -214,9 +224,5 @@ const styles = StyleSheet.create({
   price: {
     color: colors.primary,
     fontWeight: '700',
-  },
-  matchBtn: {
-    alignSelf: 'flex-end',
-    marginTop: spacing.sm,
   },
 });

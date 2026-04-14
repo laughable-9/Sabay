@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
-import { Button, Card, Chip, SegmentedButtons, Searchbar, Text } from 'react-native-paper';
+import { Button, Card, Chip, Searchbar, Text } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { RideCard } from './RideCard';
@@ -9,12 +10,9 @@ import { formatDepartureTime } from '../utils/format';
 import { colors, spacing } from '../constants/theme';
 import type { RideRequest } from '../utils/types';
 
-type Mode = 'find' | 'requests';
-
 export function RiderHomeContent() {
   const { state, dispatch, currentUser } = useApp();
   const insets = useSafeAreaInsets();
-  const [mode, setMode] = useState<Mode>('find');
   const [query, setQuery] = useState('');
 
   const matches = useMemo(() => {
@@ -34,90 +32,78 @@ export function RiderHomeContent() {
       .sort((a, b) => a.departureTime - b.departureTime);
   }, [state.rides, currentUser.id, query]);
 
-  const myRequests = useMemo(
+  const activeRequests = useMemo(
     () =>
       state.rideRequests
-        .filter((r) => r.riderId === currentUser.id)
+        .filter((r) => r.riderId === currentUser.id && r.status === 'open')
         .sort((a, b) => b.createdAt - a.createdAt),
     [state.rideRequests, currentUser.id],
   );
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]}>
-      <SegmentedButtons
-        value={mode}
-        onValueChange={(v) => setMode(v as Mode)}
-        buttons={[
-          { value: 'find', label: 'Find Rides' },
-          { value: 'requests', label: 'My Requests' },
-        ]}
+      <Searchbar
+        placeholder="Where are you heading?"
+        value={query}
+        onChangeText={setQuery}
+        style={styles.search}
       />
 
-      {mode === 'find' ? (
-        <>
-          <Searchbar
-            placeholder="Search destination"
-            value={query}
-            onChangeText={setQuery}
-            style={styles.search}
-          />
-          <Text variant="bodySmall" style={styles.muted}>
-            {matches.length} ride{matches.length === 1 ? '' : 's'} available
-          </Text>
-          <FlatList
-            data={matches}
-            keyExtractor={(r) => r.id}
-            contentContainerStyle={styles.list}
-            ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
-            ListEmptyComponent={
-              <View style={styles.empty}>
-                <Text variant="titleMedium">No rides match</Text>
-                <Text variant="bodyMedium" style={styles.muted}>
-                  Try posting a request instead.
+      <FlatList
+        data={matches}
+        keyExtractor={(r) => r.id}
+        contentContainerStyle={styles.list}
+        ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
+        ListHeaderComponent={
+          <View style={styles.listHeader}>
+            {activeRequests.length > 0 ? (
+              <View style={styles.section}>
+                <Text variant="labelLarge" style={styles.sectionLabel}>
+                  Your request
                 </Text>
+                {activeRequests.map((req) => (
+                  <RequestCard
+                    key={req.id}
+                    request={req}
+                    onCancel={() =>
+                      dispatch({ type: 'CANCEL_REQUEST', requestId: req.id })
+                    }
+                  />
+                ))}
               </View>
-            }
-            renderItem={({ item }) => (
-              <RideCard
-                ride={item}
-                onPress={() =>
-                  router.push({ pathname: '/(rider)/ride-details', params: { id: item.id } })
-                }
-              />
+            ) : (
+              <Button
+                mode="contained-tonal"
+                icon="plus"
+                onPress={() => router.push('/(rider)/post-request')}
+                style={styles.postBtn}
+              >
+                Can't find a ride? Post a request
+              </Button>
             )}
-          />
-        </>
-      ) : (
-        <>
-          <Button
-            mode="contained"
-            icon="plus"
-            onPress={() => router.push('/(rider)/post-request')}
-          >
-            Post Request
-          </Button>
-          <FlatList
-            data={myRequests}
-            keyExtractor={(r) => r.id}
-            contentContainerStyle={styles.list}
-            ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
-            ListEmptyComponent={
-              <View style={styles.empty}>
-                <Text variant="titleMedium">No requests yet</Text>
-                <Text variant="bodyMedium" style={styles.muted}>
-                  Post one so drivers know you need a ride.
-                </Text>
-              </View>
+
+            <Text variant="labelLarge" style={styles.sectionLabel}>
+              {matches.length} ride{matches.length === 1 ? '' : 's'} available
+            </Text>
+          </View>
+        }
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Text variant="titleMedium">No rides match</Text>
+            <Text variant="bodyMedium" style={styles.muted}>
+              Try a different destination or post a request.
+            </Text>
+          </View>
+        }
+        renderItem={({ item }) => (
+          <RideCard
+            ride={item}
+            onPress={() =>
+              router.push({ pathname: '/(rider)/ride-details', params: { id: item.id } })
             }
-            renderItem={({ item }) => (
-              <RequestCard
-                request={item}
-                onCancel={() => dispatch({ type: 'CANCEL_REQUEST', requestId: item.id })}
-              />
-            )}
           />
-        </>
-      )}
+        )}
+      />
     </View>
   );
 }
@@ -134,39 +120,28 @@ function RequestCard({
     <Card style={styles.card}>
       <Card.Content>
         <View style={styles.rowHeader}>
-          <Text variant="titleMedium">
-            {request.from} → {request.to}
-          </Text>
-          <Chip compact style={chipStyleFor(request.status)} textStyle={chipTextStyleFor(request.status)}>
-            {request.status}
-          </Chip>
+          <View style={styles.rowTitle}>
+            <MaterialCommunityIcons name="hand-wave" size={16} color={colors.primary} />
+            <Text variant="titleMedium">
+              {request.from} → {request.to}
+            </Text>
+          </View>
+          <Chip compact>open</Chip>
         </View>
         <Text variant="bodySmall" style={styles.muted}>
-          {when} · {request.distanceKm} km · {request.durationMin} min
+          {when} · {request.distanceKm} km · waiting for a driver
         </Text>
         {request.notes ? (
           <Text variant="bodySmall" style={styles.notes} numberOfLines={2}>
             “{request.notes}”
           </Text>
         ) : null}
-        {request.status === 'open' ? (
-          <Button mode="text" compact onPress={onCancel} style={styles.cancelBtn}>
-            Cancel
-          </Button>
-        ) : null}
+        <Button mode="text" compact onPress={onCancel} style={styles.cancelBtn}>
+          Cancel request
+        </Button>
       </Card.Content>
     </Card>
   );
-}
-
-function chipStyleFor(status: RideRequest['status']) {
-  if (status === 'matched') return { backgroundColor: '#E6F3E8' };
-  if (status === 'cancelled') return { backgroundColor: '#F5F5F5' };
-  return undefined;
-}
-function chipTextStyleFor(status: RideRequest['status']) {
-  if (status === 'matched') return { color: colors.primary, fontWeight: '600' as const };
-  return undefined;
 }
 
 const styles = StyleSheet.create({
@@ -194,8 +169,28 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  rowTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    flex: 1,
+  },
   cancelBtn: {
     alignSelf: 'flex-end',
+    marginTop: spacing.xs,
+  },
+  postBtn: {
+    alignSelf: 'stretch',
+  },
+  listHeader: {
+    gap: spacing.sm,
+    paddingBottom: spacing.sm,
+  },
+  section: {
+    gap: spacing.xs,
+  },
+  sectionLabel: {
+    color: colors.muted,
     marginTop: spacing.xs,
   },
   list: {
