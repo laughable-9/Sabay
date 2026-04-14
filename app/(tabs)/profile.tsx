@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { Button, Card, Chip, SegmentedButtons, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { Avatar } from '../../components/Avatar';
@@ -13,6 +14,7 @@ import type { Role } from '../../utils/types';
 
 export default function Profile() {
   const { state, dispatch, currentUser, resetDemo } = useApp();
+  const insets = useSafeAreaInsets();
 
   const history = useMemo(
     () =>
@@ -35,7 +37,9 @@ export default function Profile() {
   return (
     <>
       <Stack.Screen options={{ title: 'Profile' }} />
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView
+        contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}
+      >
         <Card style={styles.card}>
           <Card.Content>
             <View style={styles.profileHeader}>

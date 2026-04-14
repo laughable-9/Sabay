@@ -1,6 +1,7 @@
 import { FlatList, StyleSheet, View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Button, Card, Chip, Text } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
 import { PassengerBadge } from '../../components/PassengerBadge';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
@@ -13,6 +14,7 @@ import type { Passenger, PassengerStatus } from '../../utils/types';
 export default function DriverActiveRide() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state, dispatch } = useApp();
+  const insets = useSafeAreaInsets();
 
   const ride = state.rides.find((r) => r.id === id);
 
@@ -25,7 +27,7 @@ export default function DriverActiveRide() {
     );
   }
 
-  const pickedUp = ride.passengers.filter((p) => p.status === 'picked_up').length;
+  const joined = ride.passengers.length;
 
   const onConfirmPickup = (passengerId: string) => {
     dispatch({ type: 'PICKUP_PASSENGER', rideId: ride.id, passengerId });
@@ -53,7 +55,7 @@ export default function DriverActiveRide() {
                   {ride.durationMin} min
                 </Text>
               </View>
-              <PassengerBadge pickedUp={pickedUp} total={ride.totalSeats} />
+              <PassengerBadge joined={joined} total={ride.totalSeats} />
             </View>
           </Card.Content>
         </Card>
@@ -84,7 +86,12 @@ export default function DriverActiveRide() {
           />
         )}
 
-        <View style={styles.footer}>
+        <View
+          style={[
+            styles.footer,
+            { paddingBottom: Math.max(spacing.sm, insets.bottom + spacing.xs) },
+          ]}
+        >
           <Button
             mode="outlined"
             icon="chat"

@@ -4,16 +4,16 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing } from '../constants/theme';
 
 type Props = {
-  pickedUp: number;
+  joined: number;
   total: number;
 };
 
-export function PassengerBadge({ pickedUp, total }: Props) {
+export function PassengerBadge({ joined, total }: Props) {
   return (
     <View style={styles.container}>
       <MaterialCommunityIcons name="account-group" color={colors.primary} size={16} />
       <Text variant="labelLarge" style={styles.text}>
-        {pickedUp}/{total} riders
+        {joined}/{total} riders
       </Text>
     </View>
   );

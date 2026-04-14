@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { SabayMap } from '../components/SabayMap';
 import { useRideSimulation } from '../hooks/useRideSimulation';
@@ -9,7 +10,8 @@ import { colors, spacing } from '../constants/theme';
 
 export default function Tracking() {
   const { activeRide } = useApp();
-  const { polyline, position, etaLabel } = useRideSimulation(activeRide);
+  const { polyline, position, etaLabel, region } = useRideSimulation(activeRide);
+  const insets = useSafeAreaInsets();
 
   if (!activeRide) {
     return (
@@ -38,10 +40,19 @@ export default function Tracking() {
         </View>
 
         <View style={styles.mapWrap}>
-          <SabayMap driverPosition={position ?? undefined} polyline={polyline} />
+          <SabayMap
+            driverPosition={position ?? undefined}
+            polyline={polyline}
+            region={region}
+          />
         </View>
 
-        <View style={styles.infoCard}>
+        <View
+          style={[
+            styles.infoCard,
+            { paddingBottom: Math.max(spacing.lg, insets.bottom + spacing.sm) },
+          ]}
+        >
           <Text variant="labelSmall" style={styles.muted}>
             {activeRide.driverFirstName} is driving
           </Text>

@@ -11,6 +11,7 @@ import {
   TextInput,
 } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
 import { aggregateGasPrices } from '../../utils/gasPrice';
 import { formatPHP } from '../../utils/pricing';
@@ -31,6 +32,7 @@ const TREND_ICON = {
 
 export default function GasPrices() {
   const { state, currentUser, dispatch } = useApp();
+  const insets = useSafeAreaInsets();
   const [fuelType, setFuelType] = useState<FuelType>('unleaded');
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -53,7 +55,7 @@ export default function GasPrices() {
   return (
     <>
       <Stack.Screen options={{ title: 'Gas Prices' }} />
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top + spacing.md }]}>
         <SegmentedButtons
           value={fuelType}
           onValueChange={(v) => setFuelType(v as FuelType)}

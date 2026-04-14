@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { Button, Card, Chip, SegmentedButtons, Searchbar, Text } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { RideCard } from './RideCard';
 import { formatDepartureTime } from '../utils/format';
@@ -12,6 +13,7 @@ type Mode = 'find' | 'requests';
 
 export function RiderHomeContent() {
   const { state, dispatch, currentUser } = useApp();
+  const insets = useSafeAreaInsets();
   const [mode, setMode] = useState<Mode>('find');
   const [query, setQuery] = useState('');
 
@@ -41,7 +43,7 @@ export function RiderHomeContent() {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + spacing.md }]}>
       <SegmentedButtons
         value={mode}
         onValueChange={(v) => setMode(v as Mode)}

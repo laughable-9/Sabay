@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Button, Card, Chip, Text } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from './Avatar';
 import { useApp } from '../context/AppContext';
 import { formatPHP } from '../utils/pricing';
@@ -11,6 +12,7 @@ import type { Ride, RideRequest } from '../utils/types';
 
 export function DriverHomeContent() {
   const { state, currentUser } = useApp();
+  const insets = useSafeAreaInsets();
 
   const myRides = useMemo(
     () =>
@@ -30,7 +32,9 @@ export function DriverHomeContent() {
   );
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}
+    >
       <View style={styles.header}>
         <Text variant="headlineSmall" style={styles.title}>
           Hi {currentUser.firstName}
