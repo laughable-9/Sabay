@@ -14,7 +14,7 @@ The repo is a fresh scaffold — only `PRD.md` and `README.md` exist. The Expo p
 
 | Layer | Choice |
 |---|---|
-| Framework | React Native + Expo SDK 52 (TypeScript) |
+| Framework | React Native + Expo SDK 54 (TypeScript) |
 | Routing | Expo Router (file-based) |
 | UI | React Native Paper |
 | State | React Context + `useReducer` |
@@ -38,11 +38,13 @@ npx tsc --noEmit       # type-check without emitting
 
 ## Environment
 
-Create `.env` (gitignored) with:
+Copy `.env.example` → `.env` (gitignored) and fill in:
 
 ```
-GOOGLE_MAPS_API_KEY=your_key_here
+EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=your_key_here
 ```
+
+Expo exposes only `EXPO_PUBLIC_*` vars to the JS bundle at runtime. Read via `process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` (already wired through `constants/config.ts`).
 
 The key is **not required for the demo** — route responses for 5-6 common Baguio routes are cached locally per PRD §2.1. Add the real key when integrating live Directions API calls.
 
