@@ -1,22 +1,16 @@
 import { Stack } from 'expo-router';
 import { useApp } from '../../context/AppContext';
 import { Placeholder } from '../../components/Placeholder';
+import { DriverHomeContent } from '../../components/DriverHomeContent';
 
 export default function TabsHome() {
-  const { state, currentUser } = useApp();
+  const { state } = useApp();
 
   if (state.role === 'driver') {
     return (
       <>
         <Stack.Screen options={{ title: 'Driver' }} />
-        <Placeholder
-          title="Driver Home"
-          subtitle={`Hi ${currentUser.firstName}. Post a ride or manage active ones.`}
-          links={[
-            { href: '/(driver)/create-ride', label: 'Create Ride' },
-            { href: '/(driver)/home', label: 'My Rides' },
-          ]}
-        />
+        <DriverHomeContent />
       </>
     );
   }
