@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { Placeholder } from '../components/Placeholder';
+import { Placeholder } from '../../components/Placeholder';
 
 export default function GasPrices() {
   return (
