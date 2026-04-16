@@ -63,7 +63,7 @@ export default function VerifyRider() {
         <Button
           mode="contained"
           disabled={!canSubmit}
-          onPress={() => router.replace('/verify-pending')}
+          onPress={() => router.replace({ pathname: '/verify-pending', params: { role: 'rider' } })}
         >
           Submit
         </Button>

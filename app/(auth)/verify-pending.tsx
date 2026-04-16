@@ -1,18 +1,23 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { Stack, router } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useApp } from '../../context/AppContext';
 import { colors, spacing } from '../../constants/theme';
+import type { Role } from '../../utils/types';
 
 const AUTO_APPROVE_MS = 2500;
 
 export default function VerifyPending() {
+  const { role: roleParam } = useLocalSearchParams<{ role: string }>();
+  const { dispatch } = useApp();
   const [approved, setApproved] = useState(false);
 
   useEffect(() => {
     const approveTimer = setTimeout(() => setApproved(true), AUTO_APPROVE_MS);
     const routeTimer = setTimeout(() => {
+      dispatch({ type: 'SET_ROLE', role: (roleParam as Role) ?? 'rider' });
       router.replace('/(tabs)');
     }, AUTO_APPROVE_MS + 900);
     return () => {

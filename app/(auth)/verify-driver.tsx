@@ -103,7 +103,7 @@ export default function VerifyDriver() {
           <Button
             mode="contained"
             disabled={!canSubmit}
-            onPress={() => router.replace('/verify-pending')}
+            onPress={() => router.replace({ pathname: '/verify-pending', params: { role: 'driver' } })}
           >
             Submit for review
           </Button>

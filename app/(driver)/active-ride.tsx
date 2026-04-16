@@ -17,7 +17,7 @@ import { colors, spacing } from '../../constants/theme';
 
 export default function DriverActiveRide() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { state, dispatch } = useApp();
+  const { state, dispatch, currentUser } = useApp();
   const insets = useSafeAreaInsets();
   const ride = state.rides.find((r) => r.id === id);
   const { polyline, position, etaLabel, region, phaseLabel } = useRideSimulation(ride ?? null);
