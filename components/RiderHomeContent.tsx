@@ -4,6 +4,7 @@ import {
   Dimensions,
   Keyboard,
   KeyboardAvoidingView,
+  PanResponder,
   Platform,
   Pressable,
   ScrollView,
@@ -244,6 +245,15 @@ export function RiderHomeContent() {
     return BAGUIO_ZOOMED;
   }, [step]);
 
+  const swipeUpPan = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gs) => gs.dy < -20 && Math.abs(gs.dx) < Math.abs(gs.dy),
+      onPanResponderRelease: (_, gs) => {
+        if (gs.dy < -40 && step.kind === 'idle') openSearch();
+      },
+    }),
+  ).current;
+
   const isBrowsing = step.kind === 'browse';
 
   return (
@@ -315,6 +325,7 @@ export function RiderHomeContent() {
 
       {/* ─── IDLE: bottom panel (animated) ─── */}
       <Animated.View
+        {...swipeUpPan.panHandlers}
         style={[
           styles.compactBar,
           { paddingBottom: TAB_BAR_PADDING },

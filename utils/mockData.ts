@@ -335,6 +335,19 @@ export const MOCK_RIDES: Ride[] = [
     notes: 'Going home after class.',
   }),
   mkRide('r12', maria, 'Baguio CBD', 'La Trinidad', 9, 28, 5 * HOUR, 3),
+
+  // ── University routes ──
+  mkRide('r13', ana, 'La Trinidad', 'University of Baguio', 5, 18, 35 * MIN, 3, {
+    notes: 'Daily commute to UB.',
+  }),
+  mkRide('r14', josh, 'Saint Louis University', 'SM Baguio', 2, 8, 40 * MIN, 4, {
+    passengers: [mkPassenger(bea, 10)],
+  }),
+  mkRide('r15', cess, 'University of the Cordilleras', 'Session Road', 2, 7, HOUR, 3, {
+    notes: 'After class, heading to Session.',
+  }),
+  mkRide('r16', dex, 'Camp John Hay', 'Saint Louis University', 4, 14, 1.5 * HOUR, 3),
+
   ...KYLE_COMPLETED,
 ];
 
@@ -371,6 +384,8 @@ export const MOCK_RIDE_REQUESTS: RideRequest[] = [
   mkRequest('req2', bea, 'La Trinidad', 'SM Baguio', 9, 28, 2 * HOUR),
   mkRequest('req3', rico, 'Session Road', 'Camp John Hay', 4, 14, 3 * HOUR, 'Flexible on timing.'),
   mkRequest('req4', bea, 'UP Baguio', 'La Trinidad', 8, 25, 5 * HOUR, 'Anyone heading home after 5pm?'),
+  mkRequest('req5', jm, 'La Trinidad', 'Saint Louis University', 5, 18, HOUR, '7:30 AM class.'),
+  mkRequest('req6', tin, 'University of the Cordilleras', 'SM Baguio', 2, 8, 4 * HOUR, 'Need a ride after exams.'),
 ];
 
 function mkSubmission(

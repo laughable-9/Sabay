@@ -249,7 +249,12 @@ function reducer(state: AppState, action: Action): AppState {
     }
 
     case 'RESET_DEMO':
-      return { ...INITIAL_STATE, role: state.role, hydrated: true };
+      return {
+        ...INITIAL_STATE,
+        rides: INITIAL_STATE.rides.filter((r) => r.status !== 'completed'),
+        role: state.role,
+        hydrated: true,
+      };
 
     default:
       return state;

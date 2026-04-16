@@ -24,6 +24,7 @@ const LOCATIONS = [
   'Session Road', 'SM Baguio', 'UP Baguio', 'La Trinidad',
   'SLU Maryheights', 'Baguio CBD', 'Camp John Hay', 'Itogon',
   'Tuba', 'Pinsao Proper', 'Trancoville', 'Ambuklao',
+  'University of Baguio', 'Saint Louis University', 'University of the Cordilleras',
 ];
 
 type AutoRider = {

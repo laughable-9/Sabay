@@ -40,6 +40,15 @@ const CACHED_ROUTES: Record<string, { distanceKm: number; durationMin: number }>
   'camp john hay|sm baguio': { distanceKm: 5, durationMin: 18 },
   'camp john hay|session road': { distanceKm: 4, durationMin: 14 },
   'sm baguio|session road': { distanceKm: 2, durationMin: 8 },
+  'la trinidad|university of baguio': { distanceKm: 5, durationMin: 18 },
+  'la trinidad|saint louis university': { distanceKm: 4, durationMin: 15 },
+  'la trinidad|university of the cordilleras': { distanceKm: 5, durationMin: 18 },
+  'university of baguio|session road': { distanceKm: 1, durationMin: 5 },
+  'saint louis university|sm baguio': { distanceKm: 2, durationMin: 8 },
+  'saint louis university|session road': { distanceKm: 1, durationMin: 5 },
+  'university of the cordilleras|session road': { distanceKm: 1, durationMin: 5 },
+  'university of the cordilleras|sm baguio': { distanceKm: 2, durationMin: 7 },
+  'camp john hay|saint louis university': { distanceKm: 4, durationMin: 14 },
 };
 
 export type DistanceEstimate = {
