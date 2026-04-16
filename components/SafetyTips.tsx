@@ -5,9 +5,9 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing } from '../constants/theme';
 
 const TIPS = [
-  'Meet at PUBLIC, well-known landmarks (Burnham Park, Session Road, SM City, school gates).',
-  "Tell a friend or family member where you're going and who you're riding with.",
-  'Never share your exact home address with someone you just matched with.',
+  "Pick up and drop off at well-lit, public spots — school gates, malls, or busy intersections.",
+  "Share your ride link with a friend or family member so they can track your trip in real time.",
+  "Keep personal details (home address, daily schedule) private until you've built trust over several rides.",
 ];
 
 export function SafetyTips({ compact }: { compact?: boolean }) {
