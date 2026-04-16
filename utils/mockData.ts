@@ -19,7 +19,7 @@ export const MOCK_USERS: User[] = [
     rating: 5.0,
     verified: true,
     isDriver: true,
-    completedRides: 0,
+    completedRides: 4,
     profilePicUri: avatarUri('Kyle', '34773D'),
     joinedAt: NOW - 2 * MONTH,
     vehicle: {
@@ -264,6 +264,39 @@ const jm = MOCK_USERS[8];
 const tin = MOCK_USERS[9];
 
 const MIN = 60 * 1000;
+const self = MOCK_USERS[0];
+
+function mkDonePassenger(user: User, minutesAgo: number): Passenger {
+  return { ...mkPassenger(user, minutesAgo), status: 'dropped_off' };
+}
+
+function mkCompletedRide(
+  id: string,
+  driver: User,
+  from: string,
+  to: string,
+  distanceKm: number,
+  durationMin: number,
+  daysAgo: number,
+  totalSeats: number,
+  passengers: Passenger[],
+): Ride {
+  const ride = mkRide(id, driver, from, to, distanceKm, durationMin, 0, totalSeats, { passengers });
+  const past = Date.now() - daysAgo * DAY;
+  return { ...ride, status: 'completed', driverStatus: 'arrived', departureTime: past, createdAt: past - HOUR };
+}
+
+// Kyle's completed past rides (for dashboard stats)
+const KYLE_COMPLETED: Ride[] = [
+  mkCompletedRide('rc1', self, 'La Trinidad', 'UP Baguio', 8, 25, 1, 3,
+    [mkDonePassenger(bea, 24 * 60), mkDonePassenger(jm, 24 * 60)]),
+  mkCompletedRide('rc2', self, 'UP Baguio', 'Session Road', 3, 10, 3, 3,
+    [mkDonePassenger(tin, 3 * 24 * 60), mkDonePassenger(rico, 3 * 24 * 60)]),
+  mkCompletedRide('rc3', self, 'Session Road', 'SM Baguio', 2, 8, 5, 3,
+    [mkDonePassenger(bea, 5 * 24 * 60)]),
+  mkCompletedRide('rc4', self, 'La Trinidad', 'SM Baguio', 9, 30, 7, 3,
+    [mkDonePassenger(jm, 7 * 24 * 60), mkDonePassenger(tin, 7 * 24 * 60)]),
+];
 
 export const MOCK_RIDES: Ride[] = [
   // ── Leaving soon (within 30 min) — these show as car icons on idle map ──
@@ -302,6 +335,7 @@ export const MOCK_RIDES: Ride[] = [
     notes: 'Going home after class.',
   }),
   mkRide('r12', maria, 'Baguio CBD', 'La Trinidad', 9, 28, 5 * HOUR, 3),
+  ...KYLE_COMPLETED,
 ];
 
 function mkRequest(
