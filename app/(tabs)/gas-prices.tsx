@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import {
   Button,
   Card,
@@ -187,6 +187,7 @@ function SubmitDialog({
 
   return (
     <Dialog visible={visible} onDismiss={() => { reset(); onDismiss(); }}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Dialog.Title>Submit Gas Price</Dialog.Title>
       <Dialog.Content style={{ gap: spacing.md }}>
         <SegmentedButtons
@@ -231,6 +232,7 @@ function SubmitDialog({
           Submit
         </Button>
       </Dialog.Actions>
+      </KeyboardAvoidingView>
     </Dialog>
   );
 }

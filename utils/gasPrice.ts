@@ -65,7 +65,22 @@ export function aggregateGasPrices(
     };
   }
 
-  const valid = recent.filter((s) => !s.isOutlier).map((s) => s.pricePerLiter);
+  const reTagged = markOutliers(recent);
+  const valid = reTagged.filter((s) => !s.isOutlier).map((s) => s.pricePerLiter);
+
+  if (valid.length === 0) {
+    return {
+      fuelType,
+      medianPrice: FALLBACK_GAS_PRICE_PHP_PER_LITER,
+      minPrice: FALLBACK_GAS_PRICE_PHP_PER_LITER,
+      maxPrice: FALLBACK_GAS_PRICE_PHP_PER_LITER,
+      reportCount: recent.length,
+      lastUpdated: recent[0]?.submittedAt ?? null,
+      trend: 'stable',
+      usingFallback: true,
+    };
+  }
+
   const currentMedian = median(valid);
   const previousWeek = submissions
     .filter((s) => s.fuelType === fuelType && !s.isOutlier)

@@ -137,7 +137,7 @@ export default function Profile() {
             Active role
           </Text>
           <SegmentedButtons
-            value={state.role}
+            value={state.role ?? ''}
             onValueChange={(v) => dispatch({ type: 'SET_ROLE', role: v as Role })}
             buttons={[
               { value: 'rider', label: 'Rider' },

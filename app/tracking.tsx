@@ -8,6 +8,7 @@ import { SabayMap } from '../components/SabayMap';
 import { Avatar } from '../components/Avatar';
 import { VerifiedBadge } from '../components/VerifiedBadge';
 import { useRideSimulation } from '../hooks/useRideSimulation';
+import { maskPlate } from '../utils/format';
 import { colors, spacing } from '../constants/theme';
 
 export default function Tracking() {
@@ -79,7 +80,7 @@ export default function Tracking() {
             </Text>
             <View style={styles.platePill}>
               <Text variant="labelSmall" style={styles.plateText}>
-                {activeRide.vehicle.plateNumber}
+                {maskPlate(activeRide.vehicle.plateNumber)}
               </Text>
             </View>
           </View>

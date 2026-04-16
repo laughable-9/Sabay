@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -74,6 +74,13 @@ export default function CreateRide() {
   const [breakdownOpen, setBreakdownOpen] = useState(false);
   const [focusedField, setFocusedField] = useState<'from' | 'to' | null>(null);
   const fulfillingRequestId = params.requestId;
+  const timerIds = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    return () => {
+      timerIds.current.forEach(clearTimeout);
+    };
+  }, []);
 
   const fuelPrice = useMemo(
     () => aggregateGasPrices(state.gasPrices, 'unleaded').medianPrice,
@@ -89,6 +96,12 @@ export default function CreateRide() {
     return estimateDistance(from, to);
   }, [from, to]);
 
+  const STEEP_ROUTES = ['itogon', 'tuba', 'ambuklao'];
+  const isSteep =
+    STEEP_ROUTES.some((s) => from.trim().toLowerCase().includes(s)) ||
+    STEEP_ROUTES.some((s) => to.trim().toLowerCase().includes(s));
+  const terrainMultiplier = isSteep ? 1.2 : 1.0;
+
   const breakdown = useMemo(() => {
     if (!estimate) return null;
     return calculateFare({
@@ -96,8 +109,9 @@ export default function CreateRide() {
       fuelPricePerLiter: fuelPrice,
       fuelEfficiency,
       passengerCount: seatCount,
+      terrainMultiplier,
     });
-  }, [estimate, fuelPrice, fuelEfficiency, seatCount]);
+  }, [estimate, fuelPrice, fuelEfficiency, seatCount, terrainMultiplier]);
 
   const canSubmit = !!vehicle && !!breakdown && !!estimate;
 
@@ -143,7 +157,7 @@ export default function CreateRide() {
       totalSeats: seatCount,
       pricePerPerson: breakdown.farePerPerson,
       fuelEfficiency,
-      terrainMultiplier: 1.0,
+      terrainMultiplier,
       status: 'open',
       passengers: [],
       messages: [],
@@ -179,7 +193,7 @@ export default function CreateRide() {
     }
 
     for (const rider of queue) {
-      setTimeout(() => {
+      timerIds.current.push(setTimeout(() => {
         const passenger: Passenger = {
           id: `p_auto_${rider.userId}_${Date.now()}`,
           userId: rider.userId,
@@ -202,9 +216,9 @@ export default function CreateRide() {
             isSystem: true,
           },
         });
-      }, rider.joinDelayMs);
+      }, rider.joinDelayMs));
 
-      setTimeout(() => {
+      timerIds.current.push(setTimeout(() => {
         dispatch({
           type: 'SEND_MESSAGE',
           rideId: ride.id,
@@ -217,7 +231,7 @@ export default function CreateRide() {
             sentAt: Date.now(),
           },
         });
-      }, rider.messageDelayMs);
+      }, rider.messageDelayMs));
     }
 
     router.back();

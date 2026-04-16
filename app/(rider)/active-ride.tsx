@@ -12,6 +12,7 @@ import { Avatar } from '../../components/Avatar';
 import { useRideSimulation } from '../../hooks/useRideSimulation';
 import { shortToken } from '../../utils/rideSimulation';
 import { formatPHP } from '../../utils/pricing';
+import { maskPlate } from '../../utils/format';
 import { colors, spacing } from '../../constants/theme';
 
 export default function RiderActiveRide() {
@@ -67,10 +68,12 @@ export default function RiderActiveRide() {
     activeRide.driverStatus === 'at_pickup' && !pickupDismissed;
 
   const onShare = async () => {
-    const token = shortToken(activeRide.id);
-    await Share.share({
-      message: `Track my Sabay ride: sabay://track/${token}\nFrom ${activeRide.from} to ${activeRide.to}, arriving in ${etaLabel}.`,
-    });
+    try {
+      const token = shortToken(activeRide.id);
+      await Share.share({
+        message: `Track my Sabay ride: sabay://track/${token}\nFrom ${activeRide.from} to ${activeRide.to}, arriving in ${etaLabel}.`,
+      });
+    } catch (_) { /* user cancelled or platform error */ }
   };
 
   const onConfirmPickup = () => {
@@ -78,7 +81,7 @@ export default function RiderActiveRide() {
     if (self) {
       dispatch({ type: 'PICKUP_PASSENGER', rideId: activeRide.id, passengerId: self.id });
     }
-    dispatch({ type: 'SET_DRIVER_STATUS', rideId: activeRide.id, status: 'to_destination' });
+    // Driver-confirmed only: don't advance driver status from rider side
   };
 
   const onDismissPrompt = () => setPickupDismissed(true);
@@ -147,7 +150,7 @@ export default function RiderActiveRide() {
                 </Text>
                 <View style={styles.platePill}>
                   <Text variant="labelSmall" style={styles.plateText}>
-                    {activeRide.vehicle.plateNumber}
+                    {maskPlate(activeRide.vehicle.plateNumber)}
                   </Text>
                 </View>
               </View>
@@ -197,7 +200,7 @@ export default function RiderActiveRide() {
                   Send the fare share via GCash
                 </Text>
                 <Text variant="titleMedium" style={styles.gcashNumber}>
-                  {activeRide.driverPhone}
+                  {activeRide.driverPhone.replace(/(\d{4})\s*(\d{3})\s*(\d{4})/, '$1 *** $3')}
                 </Text>
                 <Text variant="bodySmall" style={styles.muted}>
                   {formatPHP(activeRide.pricePerPerson)} to {activeRide.driverFirstName}

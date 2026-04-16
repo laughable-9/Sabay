@@ -26,7 +26,7 @@ import type {
   User,
 } from '../utils/types';
 
-const STORAGE_KEY = 'sabay.appState.v9';
+const STORAGE_KEY = 'sabay.appState.v10';
 
 export type AppState = {
   users: User[];
@@ -280,7 +280,7 @@ const AppContext = createContext<AppContextValue | null>(null);
 
 type PersistedState = Pick<
   AppState,
-  'users' | 'rides' | 'rideRequests' | 'gasPrices' | 'role' | 'activeRideId'
+  'users' | 'rides' | 'rideRequests' | 'gasPrices' | 'role' | 'activeRideId' | 'reports'
 >;
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -307,8 +307,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       gasPrices: state.gasPrices,
       role: state.role,
       activeRideId: state.activeRideId,
+      reports: state.reports,
     };
-    setJSON(STORAGE_KEY, toPersist);
+    setJSON(STORAGE_KEY, toPersist).catch(() => {});
   }, [
     state.hydrated,
     state.users,
@@ -317,6 +318,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     state.gasPrices,
     state.role,
     state.activeRideId,
+    state.reports,
   ]);
 
   const value = useMemo<AppContextValue>(() => {

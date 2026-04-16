@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Button, Card, Text, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing } from '../constants/theme';
@@ -57,6 +57,7 @@ export function ReportDialog({ visible, targetType, targetId, reporterId, onDism
   return (
     <View style={styles.overlay}>
       <Pressable style={styles.backdrop} onPress={handleDismiss} />
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={96}>
       <Card style={styles.sheet}>
         <Card.Content style={styles.content}>
           {submitted ? (
@@ -136,6 +137,7 @@ export function ReportDialog({ visible, targetType, targetId, reporterId, onDism
           )}
         </Card.Content>
       </Card>
+      </KeyboardAvoidingView>
     </View>
   );
 }

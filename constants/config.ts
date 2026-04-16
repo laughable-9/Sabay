@@ -1,6 +1,6 @@
 export const GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
 
-export const FALLBACK_GAS_PRICE_PHP_PER_LITER = 100;
+export const FALLBACK_GAS_PRICE_PHP_PER_LITER = 65;
 export const PLATFORM_FEE_PHP = 10;
 export const PLATFORM_FEE_PERCENT = 0.05;
 export const DEFAULT_FUEL_EFFICIENCY_KM_PER_L = 10;

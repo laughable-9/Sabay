@@ -66,10 +66,12 @@ export default function DriverActiveRide() {
   const pickedUpPassengers = ride.passengers.filter((p) => p.status === 'picked_up');
 
   const onShare = async () => {
-    const token = shortToken(ride.id);
-    await Share.share({
-      message: `I'm driving a Sabay ride from ${ride.from} to ${ride.to}. Track at sabay://track/${token}.`,
-    });
+    try {
+      const token = shortToken(ride.id);
+      await Share.share({
+        message: `I'm driving a Sabay ride from ${ride.from} to ${ride.to}. Track at sabay://track/${token}.`,
+      });
+    } catch (_) { /* user cancelled or platform error */ }
   };
 
   const onConfirmPickup = () => {
