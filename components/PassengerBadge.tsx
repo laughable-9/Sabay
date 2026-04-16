@@ -1,0 +1,36 @@
+import { View, StyleSheet } from 'react-native';
+import { Text } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { colors, spacing } from '../constants/theme';
+
+type Props = {
+  joined: number;
+  total: number;
+};
+
+export function PassengerBadge({ joined, total }: Props) {
+  return (
+    <View style={styles.container}>
+      <MaterialCommunityIcons name="account-group" color={colors.primary} size={16} />
+      <Text variant="labelLarge" style={styles.text}>
+        {joined}/{total} riders
+      </Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.card,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: 16,
+  },
+  text: {
+    color: colors.primary,
+    fontWeight: '700',
+  },
+});
