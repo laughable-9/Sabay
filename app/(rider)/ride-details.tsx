@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Button, Card, Chip, Text } from 'react-native-paper';
 import { useApp } from '../../context/AppContext';
+import { hapticSuccess } from '../../utils/haptics';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { Avatar } from '../../components/Avatar';
 import { PriceBreakdown } from '../../components/PriceBreakdown';
@@ -49,6 +50,7 @@ export default function RideDetails() {
   const canJoin = seatsLeft > 0 && !alreadyJoined && ride.status === 'open';
 
   const onJoin = () => {
+    hapticSuccess();
     const passenger: Passenger = {
       id: `p_${Date.now()}`,
       userId: currentUser.id,

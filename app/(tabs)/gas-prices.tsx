@@ -15,6 +15,7 @@ import { useApp } from '../../context/AppContext';
 import { aggregateGasPrices } from '../../utils/gasPrice';
 import { formatPHP } from '../../utils/pricing';
 import { colors, spacing } from '../../constants/theme';
+import { hapticSuccess } from '../../utils/haptics';
 import type { FuelType, GasPriceSubmission } from '../../utils/types';
 
 const FUEL_OPTIONS: Array<{ value: FuelType; label: string }> = [
@@ -66,7 +67,12 @@ export default function GasPrices() {
               <Text variant="labelLarge" style={styles.muted}>
                 Community median
               </Text>
-              <MaterialCommunityIcons name={trendIcon.name} color={trendIcon.color} size={18} />
+              <View style={styles.trendPill}>
+                <MaterialCommunityIcons name={trendIcon.name} color={trendIcon.color} size={16} />
+                <Text variant="labelSmall" style={{ color: trendIcon.color, fontWeight: '700' }}>
+                  {aggregate.trend === 'up' ? 'Up' : aggregate.trend === 'down' ? 'Down' : 'Stable'} vs last week
+                </Text>
+              </View>
             </View>
             <Text variant="displaySmall" style={styles.price}>
               {formatPHP(aggregate.medianPrice)}
@@ -108,6 +114,7 @@ export default function GasPrices() {
           defaultFuelType={fuelType}
           onDismiss={() => setDialogOpen(false)}
           onSubmit={(submission) => {
+            hapticSuccess();
             dispatch({ type: 'SUBMIT_GAS_PRICE', submission });
             setDialogOpen(false);
           }}
@@ -252,6 +259,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  trendPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: 10,
+    backgroundColor: colors.surface,
   },
   price: {
     color: colors.primary,

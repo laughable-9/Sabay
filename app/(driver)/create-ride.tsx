@@ -18,6 +18,7 @@ import { aggregateGasPrices } from '../../utils/gasPrice';
 import { estimateDistance } from '../../utils/distance';
 import { DEFAULT_FUEL_EFFICIENCY_KM_PER_L } from '../../constants/config';
 import { colors, spacing } from '../../constants/theme';
+import { hapticSuccess } from '../../utils/haptics';
 import type { Passenger, Ride } from '../../utils/types';
 
 const LOCATIONS = [
@@ -115,6 +116,7 @@ export default function CreateRide() {
 
   const onPost = () => {
     if (!vehicle || !breakdown || !estimate) return;
+    hapticSuccess();
     const now = Date.now();
     const departureTime =
       departureType === 'now' ? now + 15 * 60 * 1000 : scheduledAt.getTime();

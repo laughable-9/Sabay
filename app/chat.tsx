@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { Avatar } from '../components/Avatar';
 import { colors, spacing } from '../constants/theme';
+import { hapticLight, hapticMedium } from '../utils/haptics';
 import type { ChatMessage, DriverStatus, Passenger } from '../utils/types';
 
 type StatusCopy = { label: string; color: string; icon: 'clock-outline' | 'car' | 'map-marker-check' | 'map-marker-radius' };
@@ -202,6 +203,7 @@ export default function Chat() {
   const onSend = () => {
     const text = draft.trim();
     if (!text) return;
+    hapticLight();
     dispatch({
       type: 'SEND_MESSAGE',
       rideId: ride.id,
@@ -219,6 +221,7 @@ export default function Chat() {
   };
 
   const onStartTrip = () => {
+    hapticMedium();
     dispatch({
       type: 'SEND_MESSAGE',
       rideId: ride.id,

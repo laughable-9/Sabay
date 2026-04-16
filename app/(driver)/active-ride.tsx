@@ -3,6 +3,7 @@ import { Share, StyleSheet, View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Button, Card, Dialog, Portal, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { hapticSuccess } from '../../utils/haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
 import { SabayMap } from '../../components/SabayMap';
@@ -73,6 +74,7 @@ export default function DriverActiveRide() {
     ride.passengers
       .filter((p) => p.status === 'waiting')
       .forEach((p) => {
+        hapticSuccess();
         dispatch({ type: 'PICKUP_PASSENGER', rideId: ride.id, passengerId: p.id });
       });
     dispatch({ type: 'SET_DRIVER_STATUS', rideId: ride.id, status: 'to_destination' });
