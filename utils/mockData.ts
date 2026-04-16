@@ -1,5 +1,5 @@
 import { calculateFare } from './pricing';
-import type { GasPriceSubmission, Ride, RideRequest, User } from './types';
+import type { GasPriceSubmission, Passenger, Ride, RideRequest, User } from './types';
 
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
@@ -118,9 +118,85 @@ export const MOCK_USERS: User[] = [
     profilePicUri: avatarUri('Bea', '059669'),
     joinedAt: NOW - 10 * MONTH,
   },
+  {
+    id: 'u_dex',
+    firstName: 'Dex',
+    phone: '0912 443 7756',
+    rating: 4.6,
+    verified: true,
+    isDriver: true,
+    completedRides: 34,
+    profilePicUri: avatarUri('Dex', '0E7490'),
+    joinedAt: NOW - 8 * MONTH,
+    vehicle: {
+      make: 'Suzuki',
+      model: 'Ertiga',
+      year: 2022,
+      color: 'Gray',
+      plateNumber: 'MNO 3690',
+      seatCount: 5,
+      fuelType: 'unleaded',
+      fuelEfficiency: 15,
+    },
+  },
+  {
+    id: 'u_cess',
+    firstName: 'Cess',
+    phone: '0918 224 1199',
+    rating: 4.9,
+    verified: true,
+    isDriver: true,
+    completedRides: 51,
+    profilePicUri: avatarUri('Cess', 'C026D3'),
+    joinedAt: NOW - 12 * MONTH,
+    vehicle: {
+      make: 'Toyota',
+      model: 'Wigo',
+      year: 2023,
+      color: 'Orange',
+      plateNumber: 'TUV 8024',
+      seatCount: 4,
+      fuelType: 'unleaded',
+      fuelEfficiency: 18,
+    },
+  },
+  {
+    id: 'u_jm',
+    firstName: 'JM',
+    phone: '0935 778 3301',
+    rating: 4.5,
+    verified: true,
+    isDriver: false,
+    completedRides: 8,
+    profilePicUri: avatarUri('JM', '1D4ED8'),
+    joinedAt: NOW - 3 * MONTH,
+  },
+  {
+    id: 'u_tin',
+    firstName: 'Tin',
+    phone: '0927 661 4420',
+    rating: 4.8,
+    verified: true,
+    isDriver: false,
+    completedRides: 19,
+    profilePicUri: avatarUri('Tin', 'E11D48'),
+    joinedAt: NOW - 7 * MONTH,
+  },
 ];
 
 const FUEL_PRICE_SEED = 100.5;
+
+function mkPassenger(user: User, minutesAgo: number): Passenger {
+  return {
+    id: `p_mock_${user.id}`,
+    userId: user.id,
+    firstName: user.firstName,
+    verified: user.verified,
+    status: 'waiting',
+    joinedAt: Date.now() - minutesAgo * 60 * 1000,
+    profilePicUri: user.profilePicUri,
+  };
+}
 
 function mkRide(
   id: string,
@@ -131,7 +207,7 @@ function mkRide(
   durationMin: number,
   departureOffsetMs: number,
   totalSeats: number,
-  notes?: string,
+  opts?: { notes?: string; passengers?: Passenger[] },
 ): Ride {
   if (!driver.vehicle) {
     throw new Error(`User ${driver.id} has no vehicle`);
@@ -170,9 +246,9 @@ function mkRide(
     terrainMultiplier: 1.0,
     status: 'open',
     driverStatus: 'preparing',
-    passengers: [],
+    passengers: opts?.passengers ?? [],
     messages: [],
-    notes,
+    notes: opts?.notes,
     createdAt: now - 30 * 60 * 1000,
   };
 }
@@ -180,20 +256,53 @@ function mkRide(
 const maria = MOCK_USERS[1];
 const josh = MOCK_USERS[2];
 const ana = MOCK_USERS[3];
-
-export const MOCK_RIDES: Ride[] = [
-  mkRide('r1', maria, 'La Trinidad', 'UP Baguio', 8, 25, 45 * 60 * 1000, 3, 'Pag-uwi na, may space pa.'),
-  mkRide('r2', josh, 'SLU Maryheights', 'SM Baguio', 6, 20, 1.5 * HOUR, 2),
-  mkRide('r3', ana, 'Itogon', 'Baguio CBD', 14, 40, 2 * HOUR, 4, 'AC on, no smoking.'),
-  mkRide('r4', maria, 'UP Baguio', 'Session Road', 3, 10, 3 * HOUR, 3),
-  mkRide('r5', josh, 'Camp John Hay', 'SM Baguio', 5, 18, 4 * HOUR, 3),
-  mkRide('r6', ana, 'Tuba', 'UP Baguio', 12, 35, 5 * HOUR, 4),
-  mkRide('r7', maria, 'La Trinidad', 'Session Road', 9, 28, 6 * HOUR, 3),
-  mkRide('r8', josh, 'SM Baguio', 'SLU Maryheights', 6, 22, 7 * HOUR, 2, 'Going home after class.'),
-];
-
 const rico = MOCK_USERS[4];
 const bea = MOCK_USERS[5];
+const dex = MOCK_USERS[6];
+const cess = MOCK_USERS[7];
+const jm = MOCK_USERS[8];
+const tin = MOCK_USERS[9];
+
+const MIN = 60 * 1000;
+
+export const MOCK_RIDES: Ride[] = [
+  // ── Leaving soon (within 30 min) — these show as car icons on idle map ──
+  mkRide('r1', maria, 'La Trinidad', 'UP Baguio', 8, 25, 15 * MIN, 3, {
+    notes: 'Pag-uwi na, may space pa.',
+    passengers: [mkPassenger(bea, 12)],
+  }),
+  mkRide('r2', dex, 'Trancoville', 'SM Baguio', 3, 10, 10 * MIN, 4, {
+    passengers: [mkPassenger(jm, 8)],
+  }),
+  mkRide('r3', cess, 'Session Road', 'La Trinidad', 9, 28, 20 * MIN, 3, {
+    notes: 'Uwian na, tara!',
+    passengers: [mkPassenger(tin, 5)],
+  }),
+  mkRide('r4', ana, 'UP Baguio', 'Session Road', 3, 10, 25 * MIN, 3),
+
+  // ── Leaving within the hour ──
+  mkRide('r5', josh, 'SLU Maryheights', 'Camp John Hay', 6, 20, 45 * MIN, 2, {
+    notes: 'Quick trip to CJH.',
+  }),
+  mkRide('r6', dex, 'Pinsao Proper', 'Baguio CBD', 5, 15, 50 * MIN, 5, {
+    passengers: [mkPassenger(bea, 20), mkPassenger(tin, 15)],
+  }),
+  mkRide('r7', maria, 'Camp John Hay', 'SM Baguio', 5, 18, 55 * MIN, 3),
+
+  // ── Later rides ──
+  mkRide('r8', ana, 'Itogon', 'Baguio CBD', 14, 40, 2 * HOUR, 4, {
+    notes: 'AC on, no smoking.',
+    passengers: [mkPassenger(jm, 30)],
+  }),
+  mkRide('r9', cess, 'Tuba', 'UP Baguio', 12, 35, 2.5 * HOUR, 4),
+  mkRide('r10', josh, 'La Trinidad', 'Session Road', 9, 28, 3 * HOUR, 3, {
+    passengers: [mkPassenger(tin, 45)],
+  }),
+  mkRide('r11', dex, 'SM Baguio', 'SLU Maryheights', 6, 22, 4 * HOUR, 5, {
+    notes: 'Going home after class.',
+  }),
+  mkRide('r12', maria, 'Baguio CBD', 'La Trinidad', 9, 28, 5 * HOUR, 3),
+];
 
 function mkRequest(
   id: string,
