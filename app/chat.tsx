@@ -14,6 +14,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../context/AppContext';
 import { Avatar } from '../components/Avatar';
+import { SafetyTips } from '../components/SafetyTips';
+import { ReportDialog } from '../components/ReportDialog';
 import { colors, spacing } from '../constants/theme';
 import { hapticLight, hapticMedium } from '../utils/haptics';
 import type { ChatMessage, DriverStatus, Passenger } from '../utils/types';
@@ -56,6 +58,7 @@ export default function Chat() {
   const [draft, setDraft] = useState('');
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
   const isDriver = useMemo(
@@ -334,14 +337,12 @@ export default function Chat() {
               Cancel
             </Button>
           ) : null}
+          <Pressable onPress={() => setReportOpen(true)} hitSlop={8}>
+            <MaterialCommunityIcons name="flag-outline" size={20} color={colors.muted} />
+          </Pressable>
         </View>
 
-        <View style={styles.safetyBanner}>
-          <MaterialCommunityIcons name="shield-check" size={16} color={colors.warning} />
-          <Text variant="bodySmall" style={styles.safetyText}>
-            Safety reminder: Share your trip details with someone you trust. Never ride alone with a stranger — this app requires a minimum of 2 passengers per ride.
-          </Text>
-        </View>
+        <SafetyTips compact />
 
         <FlatList
           ref={listRef}
@@ -433,6 +434,18 @@ export default function Chat() {
             </Button>
           </Dialog.Actions>
         </Dialog>
+
+        <ReportDialog
+          visible={reportOpen}
+          targetType="ride"
+          targetId={ride.id}
+          reporterId={currentUser.id}
+          onDismiss={() => setReportOpen(false)}
+          onSubmit={(report) => {
+            dispatch({ type: 'SUBMIT_REPORT', report });
+            setReportOpen(false);
+          }}
+        />
       </Portal>
     </>
   );
@@ -499,21 +512,6 @@ const styles = StyleSheet.create({
   },
   headline: {
     fontWeight: '600',
-  },
-  safetyBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    backgroundColor: '#FFF8E1',
-    borderBottomWidth: 1,
-    borderBottomColor: '#FFE082',
-  },
-  safetyText: {
-    flex: 1,
-    color: '#6D4C00',
-    lineHeight: 18,
   },
   messages: {
     padding: spacing.md,

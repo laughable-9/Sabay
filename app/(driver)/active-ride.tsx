@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { hapticSuccess } from '../../utils/haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useApp } from '../../context/AppContext';
+import { ReportDialog } from '../../components/ReportDialog';
 import { SabayMap } from '../../components/SabayMap';
 import { PassengerBadge } from '../../components/PassengerBadge';
 import { Avatar } from '../../components/Avatar';
@@ -21,6 +22,7 @@ export default function DriverActiveRide() {
   const ride = state.rides.find((r) => r.id === id);
   const { polyline, position, etaLabel, region, phaseLabel } = useRideSimulation(ride ?? null);
   const [dropoffOpen, setDropoffOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   useEffect(() => {
     if (ride?.driverStatus === 'arrived') {
@@ -192,6 +194,9 @@ export default function DriverActiveRide() {
             <Button mode="outlined" icon="share-variant" onPress={onShare}>
               Share my ride
             </Button>
+            <Button mode="text" icon="flag-outline" textColor={colors.muted} compact onPress={() => setReportOpen(true)}>
+              Report an issue
+            </Button>
           </View>
         </View>
       </View>
@@ -228,6 +233,18 @@ export default function DriverActiveRide() {
             <Button onPress={() => setDropoffOpen(false)}>Close</Button>
           </Dialog.Actions>
         </Dialog>
+
+        <ReportDialog
+          visible={reportOpen}
+          targetType="ride"
+          targetId={ride.id}
+          reporterId={currentUser.id}
+          onDismiss={() => setReportOpen(false)}
+          onSubmit={(report) => {
+            dispatch({ type: 'SUBMIT_REPORT', report });
+            setReportOpen(false);
+          }}
+        />
       </Portal>
     </>
   );

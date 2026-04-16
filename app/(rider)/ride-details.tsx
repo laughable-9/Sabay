@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { Button, Card, Chip, Text } from 'react-native-paper';
+import { Button, Card, Chip, Portal, Text } from 'react-native-paper';
 import { useApp } from '../../context/AppContext';
 import { hapticSuccess } from '../../utils/haptics';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
@@ -10,6 +10,8 @@ import { PriceBreakdown } from '../../components/PriceBreakdown';
 import { calculateFare, formatPHP } from '../../utils/pricing';
 import { aggregateGasPrices } from '../../utils/gasPrice';
 import { maskPlate, formatMonthYear } from '../../utils/format';
+import { SafetyTips } from '../../components/SafetyTips';
+import { ReportDialog } from '../../components/ReportDialog';
 import { colors, spacing } from '../../constants/theme';
 import type { Passenger } from '../../utils/types';
 
@@ -17,6 +19,7 @@ export default function RideDetails() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state, dispatch, currentUser } = useApp();
   const [breakdownOpen, setBreakdownOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const ride = state.rides.find((r) => r.id === id);
 
@@ -140,6 +143,8 @@ export default function RideDetails() {
           </View>
         ) : null}
 
+        <SafetyTips compact />
+
         <Button
           mode="contained"
           disabled={!canJoin}
@@ -152,7 +157,33 @@ export default function RideDetails() {
               ? 'Ride Full'
               : `Join Ride · ${formatPHP(ride.pricePerPerson)}`}
         </Button>
+
+        <Button
+          mode="text"
+          icon="flag"
+          textColor={colors.muted}
+          compact
+          onPress={() => setReportOpen(true)}
+          style={styles.reportBtn}
+        >
+          Report this ride
+        </Button>
       </ScrollView>
+
+      <Portal>
+        <ReportDialog
+          visible={reportOpen}
+          targetType="ride"
+          targetId={ride.id}
+          reporterId={currentUser.id}
+          onDismiss={() => setReportOpen(false)}
+          onSubmit={(report) => {
+            dispatch({ type: 'SUBMIT_REPORT', report });
+            setReportOpen(false);
+            Alert.alert('Report submitted', 'Thanks for helping keep Sabay safe. Our team will review this.');
+          }}
+        />
+      </Portal>
     </>
   );
 }
@@ -212,5 +243,8 @@ const styles = StyleSheet.create({
   },
   breakdownToggle: {
     alignSelf: 'flex-start',
+  },
+  reportBtn: {
+    alignSelf: 'center',
   },
 });

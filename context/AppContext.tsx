@@ -19,6 +19,7 @@ import type {
   DriverStatus,
   GasPriceSubmission,
   Passenger,
+  Report,
   Ride,
   RideRequest,
   Role,
@@ -34,6 +35,7 @@ export type AppState = {
   gasPrices: GasPriceSubmission[];
   currentUserId: string;
   role: Role;
+  reports: Report[];
   activeRideId: string | null;
   hydrated: boolean;
 };
@@ -44,6 +46,7 @@ const INITIAL_STATE: AppState = {
   rideRequests: MOCK_RIDE_REQUESTS,
   gasPrices: markOutliers(MOCK_GAS_PRICES),
   currentUserId: 'u_self',
+  reports: [],
   role: null,
   activeRideId: null,
   hydrated: false,
@@ -68,6 +71,7 @@ type Action =
   | { type: 'DROP_OFF_PASSENGER'; rideId: string; passengerId: string }
   | { type: 'SET_USER_PROFILE'; updates: Partial<User> }
   | { type: 'SET_PASSENGER_PAYMENT'; rideId: string; passengerId: string; received: boolean }
+  | { type: 'SUBMIT_REPORT'; report: Report }
   | { type: 'RESET_DEMO' };
 
 const VALID_DRIVER_STATUSES: ReadonlyArray<DriverStatus> = [
@@ -247,6 +251,9 @@ function reducer(state: AppState, action: Action): AppState {
       );
       return { ...state, rides };
     }
+
+    case 'SUBMIT_REPORT':
+      return { ...state, reports: [...state.reports, action.report] };
 
     case 'RESET_DEMO':
       return {

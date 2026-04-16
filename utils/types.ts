@@ -114,3 +114,13 @@ export type GasPriceSubmission = {
   submittedByUserId: string;
   isOutlier: boolean;
 };
+
+export type Report = {
+  id: string;
+  reporterId: string;
+  targetType: 'ride' | 'user';
+  targetId: string;
+  reason: string;
+  details?: string;
+  createdAt: number;
+};

@@ -13,6 +13,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useApp } from '../../context/AppContext';
 import { estimateDistance } from '../../utils/distance';
+import { SafetyTips } from '../../components/SafetyTips';
 import { colors, spacing } from '../../constants/theme';
 import type { RideRequest } from '../../utils/types';
 
@@ -213,6 +214,8 @@ export default function PostRequest() {
               />
             </Card.Content>
           </Card>
+
+          <SafetyTips compact />
 
           {/* Submit */}
           <Button
