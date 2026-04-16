@@ -1,9 +1,19 @@
+import { useEffect } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { Stack, Link, router } from 'expo-router';
 import { Button, Text } from 'react-native-paper';
 import { colors, spacing } from '../constants/theme';
+import { useApp } from '../context/AppContext';
 
 export default function Splash() {
+  const { state } = useApp();
+
+  useEffect(() => {
+    if (state.hydrated && state.role) {
+      router.replace('/(tabs)');
+    }
+  }, [state.hydrated, state.role]);
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
