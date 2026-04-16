@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Card, Chip, SegmentedButtons, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { useApp } from '../../context/AppContext';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
 import { Avatar } from '../../components/Avatar';
@@ -177,6 +178,24 @@ export default function Profile() {
               );
             })
           )}
+        </View>
+
+        <View style={styles.section}>
+          <Text variant="labelLarge" style={styles.sectionLabel}>
+            Account
+          </Text>
+          <Button
+            mode="outlined"
+            icon="logout"
+            textColor={colors.danger}
+            onPress={async () => {
+              await resetDemo();
+              dispatch({ type: 'SET_ROLE', role: null });
+              router.replace('/');
+            }}
+          >
+            Sign out
+          </Button>
         </View>
 
         <View style={styles.section}>

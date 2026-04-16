@@ -44,7 +44,7 @@ const INITIAL_STATE: AppState = {
   rideRequests: MOCK_RIDE_REQUESTS,
   gasPrices: markOutliers(MOCK_GAS_PRICES),
   currentUserId: 'u_self',
-  role: 'driver',
+  role: null,
   activeRideId: null,
   hydrated: false,
 };
@@ -249,7 +249,7 @@ function reducer(state: AppState, action: Action): AppState {
     }
 
     case 'RESET_DEMO':
-      return { ...INITIAL_STATE, hydrated: true };
+      return { ...INITIAL_STATE, role: state.role, hydrated: true };
 
     default:
       return state;

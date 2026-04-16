@@ -1,4 +1,4 @@
-export type Role = 'rider' | 'driver';
+export type Role = 'rider' | 'driver' | null;
 
 export type FuelType = 'unleaded' | 'diesel' | 'premium';
 
