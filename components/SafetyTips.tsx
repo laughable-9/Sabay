@@ -6,7 +6,7 @@ import { colors, spacing } from '../constants/theme';
 
 const TIPS = [
   'Meet at PUBLIC, well-known landmarks (Burnham Park, Session Road, SM City, school gates).',
-  'Tell a friend or family member where you're going and who you're riding with.',
+  "Tell a friend or family member where you're going and who you're riding with.",
   'Never share your exact home address with someone you just matched with.',
 ];
 
