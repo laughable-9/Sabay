@@ -25,7 +25,7 @@ import type {
   User,
 } from '../utils/types';
 
-const STORAGE_KEY = 'sabay.appState.v7';
+const STORAGE_KEY = 'sabay.appState.v8';
 
 export type AppState = {
   users: User[];
