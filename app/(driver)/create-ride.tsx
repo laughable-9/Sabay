@@ -1,7 +1,15 @@
 import { useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { Button, SegmentedButtons, Text, TextInput } from 'react-native-paper';
+import { Button, Card, SegmentedButtons, Text, TextInput } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useApp } from '../../context/AppContext';
 import { PriceBreakdown } from '../../components/PriceBreakdown';
@@ -11,6 +19,12 @@ import { estimateDistance } from '../../utils/distance';
 import { DEFAULT_FUEL_EFFICIENCY_KM_PER_L } from '../../constants/config';
 import { colors, spacing } from '../../constants/theme';
 import type { Passenger, Ride } from '../../utils/types';
+
+const LOCATIONS = [
+  'Session Road', 'SM Baguio', 'UP Baguio', 'La Trinidad',
+  'SLU Maryheights', 'Baguio CBD', 'Camp John Hay', 'Itogon',
+  'Tuba', 'Pinsao Proper', 'Trancoville', 'Ambuklao',
+];
 
 type AutoRider = {
   userId: string;
@@ -22,8 +36,6 @@ type AutoRider = {
   message: string;
 };
 
-// Populated after a driver posts a ride so a single-device demo has real
-// passengers showing up and chatting without a second device.
 const DEFAULT_AUTO_RIDERS: AutoRider[] = [
   {
     userId: 'u_bea',
@@ -58,6 +70,7 @@ export default function CreateRide() {
   const [scheduledAt, setScheduledAt] = useState<Date>(() => new Date(Date.now() + 60 * 60 * 1000));
   const [pickerOpen, setPickerOpen] = useState(false);
   const [breakdownOpen, setBreakdownOpen] = useState(false);
+  const [focusedField, setFocusedField] = useState<'from' | 'to' | null>(null);
   const fulfillingRequestId = params.requestId;
 
   const fuelPrice = useMemo(
@@ -85,6 +98,19 @@ export default function CreateRide() {
   }, [estimate, fuelPrice, fuelEfficiency, seatCount]);
 
   const canSubmit = !!vehicle && !!breakdown && !!estimate;
+
+  const suggestions = useMemo(() => {
+    if (!focusedField) return [];
+    const q = (focusedField === 'from' ? from : to).trim().toLowerCase();
+    if (!q) return LOCATIONS;
+    return LOCATIONS.filter((l) => l.toLowerCase().includes(q));
+  }, [focusedField, from, to]);
+
+  const pickSuggestion = (value: string) => {
+    if (focusedField === 'from') setFrom(value);
+    else if (focusedField === 'to') setTo(value);
+    setFocusedField(null);
+  };
 
   const onPost = () => {
     if (!vehicle || !breakdown || !estimate) return;
@@ -131,9 +157,6 @@ export default function CreateRide() {
       dispatch({ type: 'FULFILL_REQUEST', requestId: fulfilledRequest.id, rideId: ride.id });
     }
 
-    // First joiner is the requester if we're fulfilling, otherwise Bea.
-    // Second joiner is always Rico so single-device demos always end up
-    // with two real-feeling people chatting in the ride.
     const firstJoiner: AutoRider = fulfilledRequest
       ? {
           userId: fulfilledRequest.riderId,
@@ -201,118 +224,200 @@ export default function CreateRide() {
     <>
       <Stack.Screen options={{ title: 'Create Ride' }} />
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={96}
       >
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-          {fulfillingRequestId ? (
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets
+        >
+          {/* Fulfilling request banner */}
+          {fulfillingRequestId && (
             <View style={styles.banner}>
+              <MaterialCommunityIcons name="handshake" size={18} color={colors.primary} />
               <Text variant="labelMedium" style={styles.bannerText}>
                 Fulfilling a rider request — posting this ride will mark it matched.
               </Text>
             </View>
-          ) : null}
-          <TextInput
-            label="From"
-            value={from}
-            onChangeText={setFrom}
-            mode="outlined"
-            placeholder="e.g. La Trinidad"
-          />
-          <TextInput
-            label="To"
-            value={to}
-            onChangeText={setTo}
-            mode="outlined"
-            placeholder="e.g. UP Baguio"
-          />
-
-          <View style={styles.group}>
-            <Text variant="labelLarge" style={styles.label}>
-              Departure
-            </Text>
-            <SegmentedButtons
-              value={departureType}
-              onValueChange={(v) => setDepartureType(v as 'now' | 'scheduled')}
-              buttons={[
-                { value: 'now', label: 'Leaving now' },
-                { value: 'scheduled', label: 'Scheduled' },
-              ]}
-            />
-            {departureType === 'scheduled' ? (
-              <>
-                <Button mode="outlined" icon="calendar" onPress={() => setPickerOpen(true)}>
-                  {scheduledAt.toLocaleString([], {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </Button>
-                {pickerOpen ? (
-                  <DateTimePicker
-                    value={scheduledAt}
-                    mode="datetime"
-                    minimumDate={new Date()}
-                    onChange={(_, date) => {
-                      setPickerOpen(Platform.OS === 'ios');
-                      if (date) setScheduledAt(date);
-                    }}
-                  />
-                ) : null}
-              </>
-            ) : null}
-          </View>
-
-          <TextInput
-            label="Available seats"
-            value={seats}
-            onChangeText={setSeats}
-            mode="outlined"
-            keyboardType="number-pad"
-          />
-          <TextInput
-            label="Notes (optional)"
-            value={notes}
-            onChangeText={setNotes}
-            mode="outlined"
-            multiline
-            placeholder="Pag-uwi na, may space pa."
-          />
-
-          {!vehicle ? (
-            <Text style={styles.warning}>
-              Your profile has no vehicle on file. This demo user should be a driver — check mock data.
-            </Text>
-          ) : null}
-
-          {estimate ? (
-            <Text variant="bodySmall" style={styles.muted}>
-              {estimate.source === 'cached' ? 'Cached route' : 'Estimated route'} ·{' '}
-              {estimate.distanceKm} km · {estimate.durationMin} min
-            </Text>
-          ) : (
-            <Text variant="bodySmall" style={styles.muted}>
-              Enter origin and destination to see the fare.
-            </Text>
           )}
 
-          {breakdown ? (
-            <View style={styles.breakdown}>
-              <Button
-                mode="text"
-                icon={breakdownOpen ? 'chevron-up' : 'chevron-down'}
-                contentStyle={{ flexDirection: 'row-reverse' }}
-                onPress={() => setBreakdownOpen((v) => !v)}
-              >
-                {breakdownOpen ? 'Hide fare breakdown' : 'Show fare breakdown'}
-              </Button>
-              {breakdownOpen ? <PriceBreakdown breakdown={breakdown} /> : null}
-            </View>
-          ) : null}
+          {/* Route card */}
+          <Card style={styles.card}>
+            <Card.Content style={styles.routeCard}>
+              <View style={styles.routeDots}>
+                <View style={styles.greenDot} />
+                <View style={styles.dottedLine} />
+                <View style={styles.redDot} />
+              </View>
+              <View style={styles.routeInputs}>
+                <TextInput
+                  label="Pickup location"
+                  value={from}
+                  onChangeText={(v) => { setFrom(v); setFocusedField('from'); }}
+                  onFocus={() => setFocusedField('from')}
+                  mode="outlined"
+                  placeholder="e.g. La Trinidad"
+                  dense
+                  style={styles.routeInput}
+                />
+                <TextInput
+                  label="Drop-off"
+                  value={to}
+                  onChangeText={(v) => { setTo(v); setFocusedField('to'); }}
+                  onFocus={() => setFocusedField('to')}
+                  mode="outlined"
+                  placeholder="e.g. UP Baguio"
+                  dense
+                  style={styles.routeInput}
+                />
+              </View>
+            </Card.Content>
+          </Card>
 
-          <Button mode="contained" disabled={!canSubmit} onPress={onPost} style={styles.submit}>
+          {/* Autocomplete suggestions */}
+          {focusedField && suggestions.length > 0 && (
+            <Card style={styles.suggestCard}>
+              <Card.Content style={styles.suggestContent}>
+                <Pressable style={styles.suggestRow} onPress={() => pickSuggestion('Baguio CBD')}>
+                  <MaterialCommunityIcons name="crosshairs-gps" size={18} color={colors.primary} />
+                  <Text variant="bodyMedium" style={styles.currentLocText}>Use current location</Text>
+                </Pressable>
+                <View style={styles.suggestDivider} />
+                {suggestions.map((loc) => (
+                  <Pressable key={loc} style={styles.suggestRow} onPress={() => pickSuggestion(loc)}>
+                    <MaterialCommunityIcons name="map-marker-outline" size={18} color={colors.muted} />
+                    <Text variant="bodyMedium">{loc}</Text>
+                  </Pressable>
+                ))}
+              </Card.Content>
+            </Card>
+          )}
+
+          {/* Route preview */}
+          {estimate && (
+            <View style={styles.routePreview}>
+              <MaterialCommunityIcons name="map-marker-distance" size={16} color={colors.primary} />
+              <Text variant="bodySmall" style={styles.previewText}>
+                {estimate.source === 'cached' ? 'Known route' : 'Estimated'} · {estimate.distanceKm} km · {estimate.durationMin} min
+              </Text>
+            </View>
+          )}
+
+          {/* Departure card */}
+          <Card style={styles.card}>
+            <Card.Content style={styles.sectionContent}>
+              <View style={styles.sectionHeader}>
+                <MaterialCommunityIcons name="clock-outline" size={18} color={colors.primary} />
+                <Text variant="labelLarge">When are you leaving?</Text>
+              </View>
+              <SegmentedButtons
+                value={departureType}
+                onValueChange={(v) => setDepartureType(v as 'now' | 'scheduled')}
+                buttons={[
+                  { value: 'now', label: 'Leaving now' },
+                  { value: 'scheduled', label: 'Scheduled' },
+                ]}
+              />
+              {departureType === 'scheduled' && (
+                <>
+                  <Button mode="outlined" icon="calendar" onPress={() => setPickerOpen(true)}>
+                    {scheduledAt.toLocaleString([], {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </Button>
+                  {pickerOpen && (
+                    <DateTimePicker
+                      value={scheduledAt}
+                      mode="datetime"
+                      minimumDate={new Date()}
+                      onChange={(_, date) => {
+                        setPickerOpen(Platform.OS === 'ios');
+                        if (date) setScheduledAt(date);
+                      }}
+                    />
+                  )}
+                </>
+              )}
+            </Card.Content>
+          </Card>
+
+          {/* Ride details card */}
+          <Card style={styles.card}>
+            <Card.Content style={styles.sectionContent}>
+              <View style={styles.sectionHeader}>
+                <MaterialCommunityIcons name="car-side" size={18} color={colors.primary} />
+                <Text variant="labelLarge">Ride details</Text>
+              </View>
+              <TextInput
+                label="Available seats"
+                value={seats}
+                onChangeText={setSeats}
+                mode="outlined"
+                keyboardType="number-pad"
+                dense
+                style={styles.inputBg}
+              />
+              <TextInput
+                label="Notes (optional)"
+                value={notes}
+                onChangeText={setNotes}
+                mode="outlined"
+                multiline
+                placeholder="Pag-uwi na, may space pa."
+                dense
+                style={styles.inputBg}
+              />
+            </Card.Content>
+          </Card>
+
+          {/* Vehicle warning */}
+          {!vehicle && (
+            <View style={styles.warningRow}>
+              <MaterialCommunityIcons name="alert-circle" size={16} color={colors.danger} />
+              <Text variant="bodySmall" style={styles.warningText}>
+                No vehicle on file. Add one in your profile to post rides.
+              </Text>
+            </View>
+          )}
+
+          {/* Fare breakdown */}
+          {breakdown && (
+            <Card style={styles.card}>
+              <Card.Content style={styles.sectionContent}>
+                <Pressable
+                  style={styles.fareToggle}
+                  onPress={() => setBreakdownOpen((v) => !v)}
+                >
+                  <View style={styles.sectionHeader}>
+                    <MaterialCommunityIcons name="calculator-variant" size={18} color={colors.primary} />
+                    <Text variant="labelLarge">Fare breakdown</Text>
+                  </View>
+                  <MaterialCommunityIcons
+                    name={breakdownOpen ? 'chevron-up' : 'chevron-down'}
+                    size={20}
+                    color={colors.muted}
+                  />
+                </Pressable>
+                {breakdownOpen && <PriceBreakdown breakdown={breakdown} />}
+              </Card.Content>
+            </Card>
+          )}
+
+          {/* Submit */}
+          <Button
+            mode="contained"
+            disabled={!canSubmit}
+            onPress={onPost}
+            style={styles.submit}
+            contentStyle={styles.submitContent}
+            labelStyle={styles.submitLabel}
+          >
             Post Ride
           </Button>
         </ScrollView>
@@ -322,36 +427,149 @@ export default function CreateRide() {
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
   container: {
-    padding: spacing.lg,
-    gap: spacing.md,
+    padding: spacing.md,
+    gap: spacing.sm,
     paddingBottom: spacing.xl * 2,
   },
-  group: {
-    gap: spacing.sm,
+
+  // Cards
+  card: {
+    backgroundColor: colors.card,
+    borderRadius: 14,
   },
-  label: {
-    color: colors.muted,
-  },
-  muted: {
-    color: colors.muted,
-  },
-  warning: {
-    color: colors.danger,
-  },
+
+  // Banner
   banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
     padding: spacing.md,
     backgroundColor: '#E6F3E8',
-    borderRadius: 8,
+    borderRadius: 12,
   },
   bannerText: {
+    flex: 1,
     color: colors.primary,
     fontWeight: '600',
   },
-  submit: {
-    marginTop: spacing.md,
-  },
-  breakdown: {
+
+  // Route section
+  routeCard: {
+    flexDirection: 'row',
     gap: spacing.sm,
+  },
+  routeDots: {
+    alignItems: 'center',
+    paddingTop: 20,
+    gap: 2,
+  },
+  greenDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.primary,
+  },
+  dottedLine: {
+    width: 2,
+    height: 28,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: colors.muted,
+  },
+  redDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.danger,
+  },
+  routeInputs: {
+    flex: 1,
+    gap: spacing.sm,
+  },
+  routeInput: {
+    backgroundColor: colors.card,
+  },
+
+  // Autocomplete
+  suggestCard: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    marginTop: -spacing.xs,
+  },
+  suggestContent: {
+    gap: 0,
+  },
+  currentLocText: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  suggestDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.surface,
+  },
+  suggestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+
+  // Route preview
+  routePreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
+  previewText: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+
+  // Section cards
+  sectionContent: {
+    gap: spacing.sm,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  inputBg: {
+    backgroundColor: colors.card,
+  },
+
+  // Warning
+  warningRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
+  warningText: {
+    color: colors.danger,
+    flex: 1,
+  },
+
+  // Fare toggle
+  fareToggle: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  // Submit
+  submit: {
+    marginTop: spacing.sm,
+    borderRadius: 12,
+  },
+  submitContent: {
+    paddingVertical: 4,
+  },
+  submitLabel: {
+    fontWeight: '700',
+    fontSize: 15,
   },
 });
