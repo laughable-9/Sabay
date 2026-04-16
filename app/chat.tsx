@@ -333,6 +333,13 @@ export default function Chat() {
           ) : null}
         </View>
 
+        <View style={styles.safetyBanner}>
+          <MaterialCommunityIcons name="shield-check" size={16} color={colors.warning} />
+          <Text variant="bodySmall" style={styles.safetyText}>
+            Safety reminder: Share your trip details with someone you trust. Never ride alone with a stranger — this app requires a minimum of 2 passengers per ride.
+          </Text>
+        </View>
+
         <FlatList
           ref={listRef}
           data={ride.messages}
@@ -489,6 +496,21 @@ const styles = StyleSheet.create({
   },
   headline: {
     fontWeight: '600',
+  },
+  safetyBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: '#FFF8E1',
+    borderBottomWidth: 1,
+    borderBottomColor: '#FFE082',
+  },
+  safetyText: {
+    flex: 1,
+    color: '#6D4C00',
+    lineHeight: 18,
   },
   messages: {
     padding: spacing.md,

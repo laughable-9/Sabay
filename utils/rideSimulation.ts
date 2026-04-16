@@ -72,7 +72,7 @@ export function buildPolylineBetween(
 export function driverApproachStart(rideId: string, pickup: LatLng): LatLng {
   const seed = hash(rideId);
   const angle = ((seed % 360) * Math.PI) / 180;
-  const r = 0.012; // ~1.3 km at Baguio's latitude
+  const r = 0.003; // ~330m at Baguio's latitude
   return {
     latitude: pickup.latitude + r * Math.cos(angle),
     longitude: pickup.longitude + r * Math.sin(angle),

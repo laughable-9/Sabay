@@ -80,7 +80,7 @@ export default function CreateRide() {
 
   const vehicle = currentUser.vehicle;
   const fuelEfficiency = vehicle?.fuelEfficiency ?? DEFAULT_FUEL_EFFICIENCY_KM_PER_L;
-  const seatCount = Math.max(1, Math.min(6, Number(seats) || 1));
+  const seatCount = Math.max(2, Math.min(6, Number(seats) || 2));
 
   const estimate = useMemo(() => {
     if (!from.trim() || !to.trim()) return null;
@@ -355,7 +355,7 @@ export default function CreateRide() {
                 <Text variant="labelLarge">Ride details</Text>
               </View>
               <TextInput
-                label="Available seats"
+                label="Available seats (min. 2)"
                 value={seats}
                 onChangeText={setSeats}
                 mode="outlined"

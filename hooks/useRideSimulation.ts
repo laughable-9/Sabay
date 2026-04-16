@@ -10,8 +10,8 @@ import type { LatLng } from '../components/SabayMap';
 import type { Ride } from '../utils/types';
 import { useApp } from '../context/AppContext';
 
-const PHASE_PICKUP_DURATION_MS = 15_000;
-const PHASE_DESTINATION_DURATION_MS = 30_000;
+const PHASE_PICKUP_DURATION_MS = 5_000;
+const PHASE_DESTINATION_DURATION_MS = 10_000;
 
 export type SimulatedRide = {
   polyline: LatLng[];
