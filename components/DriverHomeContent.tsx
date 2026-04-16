@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Button, Card, Chip, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -10,6 +10,13 @@ import { formatPHP } from '../utils/pricing';
 import { formatDepartureTime } from '../utils/format';
 import { colors, spacing } from '../constants/theme';
 import type { Ride, RideRequest } from '../utils/types';
+
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
+}
 
 export function DriverHomeContent() {
   const { state, currentUser } = useApp();
@@ -28,6 +35,14 @@ export function DriverHomeContent() {
     [state.rides, currentUser.id],
   );
 
+  const completedRides = useMemo(
+    () =>
+      state.rides
+        .filter((r) => r.driverId === currentUser.id && r.status === 'completed')
+        .sort((a, b) => b.departureTime - a.departureTime),
+    [state.rides, currentUser.id],
+  );
+
   const openRequests = useMemo(
     () =>
       state.rideRequests
@@ -37,13 +52,26 @@ export function DriverHomeContent() {
     [state.rideRequests],
   );
 
+  // Dashboard stats
+  const totalFuelCovered = useMemo(
+    () =>
+      completedRides.reduce(
+        (sum, r) => sum + r.pricePerPerson * r.passengers.length,
+        0,
+      ),
+    [completedRides],
+  );
+
+  const recentCompleted = completedRides.slice(0, 3);
+
   return (
     <ScrollView
       contentContainerStyle={[styles.container, { paddingTop: insets.top + spacing.md }]}
     >
+      {/* Greeting */}
       <View style={styles.header}>
         <Text variant="headlineSmall" style={styles.title}>
-          Hi {currentUser.firstName}
+          {getGreeting()}, {currentUser.firstName}
         </Text>
         <Text variant="bodyMedium" style={styles.muted}>
           {myRides.length === 0
@@ -52,19 +80,46 @@ export function DriverHomeContent() {
         </Text>
       </View>
 
+      {/* Dashboard stats */}
+      <View style={styles.statsRow}>
+        <View style={styles.statCard}>
+          <MaterialCommunityIcons name="gas-station" size={20} color={colors.primary} />
+          <Text variant="titleMedium" style={styles.statValue}>
+            {formatPHP(totalFuelCovered)}
+          </Text>
+          <Text variant="labelSmall" style={styles.statLabel}>
+            Fuel covered
+          </Text>
+        </View>
+        <View style={styles.statCard}>
+          <MaterialCommunityIcons name="check-decagram" size={20} color={colors.primary} />
+          <Text variant="titleMedium" style={styles.statValue}>
+            {completedRides.length}
+          </Text>
+          <Text variant="labelSmall" style={styles.statLabel}>
+            Rides
+          </Text>
+        </View>
+        <View style={styles.statCard}>
+          <MaterialCommunityIcons name="star" size={20} color={colors.warning} />
+          <Text variant="titleMedium" style={styles.statValue}>
+            {currentUser.rating.toFixed(1)}
+          </Text>
+          <Text variant="labelSmall" style={styles.statLabel}>
+            Rating
+          </Text>
+        </View>
+      </View>
+
+      {/* Create ride CTA */}
       <Link href="/(driver)/create-ride" asChild>
         <Button mode="contained" icon="plus">
           Create Ride
         </Button>
       </Link>
 
-      {myRides.length === 0 ? (
-        <View style={styles.empty}>
-          <Text variant="bodyMedium" style={styles.muted}>
-            No active rides yet.
-          </Text>
-        </View>
-      ) : (
+      {/* My active rides */}
+      {myRides.length > 0 && (
         <View style={styles.list}>
           {myRides.map((ride) => (
             <MyRideCard key={ride.id} ride={ride} />
@@ -72,6 +127,21 @@ export function DriverHomeContent() {
         </View>
       )}
 
+      {/* Quick re-post */}
+      {recentCompleted.length > 0 && (
+        <View style={styles.section}>
+          <Text variant="labelLarge" style={styles.sectionLabel}>
+            Repeat a ride
+          </Text>
+          <View style={styles.list}>
+            {recentCompleted.map((ride) => (
+              <RepeatRideCard key={ride.id} ride={ride} />
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Open requests */}
       {openRequests.length > 0 ? (
         <View style={styles.section}>
           <Text variant="labelLarge" style={styles.sectionLabel}>
@@ -87,6 +157,8 @@ export function DriverHomeContent() {
     </ScrollView>
   );
 }
+
+/* ─── Sub-components ─── */
 
 function MyRideCard({ ride }: { ride: Ride }) {
   const seatsTaken = ride.passengers.filter((p) => p.status !== 'dropped_off').length;
@@ -115,6 +187,70 @@ function MyRideCard({ ride }: { ride: Ride }) {
           <Text variant="titleMedium" style={styles.price}>
             {formatPHP(ride.pricePerPerson)}
           </Text>
+        </View>
+        <Pressable
+          style={styles.returnBtn}
+          onPress={(e) => {
+            e.stopPropagation();
+            router.push({
+              pathname: '/(driver)/create-ride',
+              params: { from: ride.to, to: ride.from },
+            });
+          }}
+        >
+          <MaterialCommunityIcons name="swap-horizontal" size={16} color={colors.primary} />
+          <Text variant="labelMedium" style={styles.returnBtnText}>
+            Post return trip
+          </Text>
+        </Pressable>
+      </Card.Content>
+    </Card>
+  );
+}
+
+function RepeatRideCard({ ride }: { ride: Ride }) {
+  const dateLabel = new Date(ride.departureTime).toLocaleDateString([], {
+    month: 'short',
+    day: 'numeric',
+  });
+
+  const onRepost = () => {
+    router.push({
+      pathname: '/(driver)/create-ride',
+      params: { from: ride.from, to: ride.to },
+    });
+  };
+
+  return (
+    <Card style={styles.card} onPress={onRepost}>
+      <Card.Content style={styles.repeatContent}>
+        <View style={styles.repeatIcon}>
+          <MaterialCommunityIcons name="repeat" size={18} color={colors.primary} />
+        </View>
+        <View style={styles.repeatText}>
+          <Text variant="titleSmall">
+            {ride.from} → {ride.to}
+          </Text>
+          <Text variant="bodySmall" style={styles.muted}>
+            {dateLabel} · {ride.passengers.length} rider{ride.passengers.length === 1 ? '' : 's'}
+          </Text>
+        </View>
+        <View style={styles.repeatActions}>
+          <Pressable
+            style={styles.swapBtn}
+            onPress={(e) => {
+              e.stopPropagation();
+              router.push({
+                pathname: '/(driver)/create-ride',
+                params: { from: ride.to, to: ride.from },
+              });
+            }}
+          >
+            <MaterialCommunityIcons name="swap-horizontal" size={16} color={colors.primary} />
+          </Pressable>
+          <Chip compact mode="outlined" textStyle={styles.repostChipText}>
+            Re-post
+          </Chip>
         </View>
       </Card.Content>
     </Card>
@@ -163,6 +299,8 @@ function RequestPrompt({ request }: { request: RideRequest }) {
   );
 }
 
+/* ─── Styles ─── */
+
 const styles = StyleSheet.create({
   container: {
     padding: spacing.lg,
@@ -175,10 +313,31 @@ const styles = StyleSheet.create({
   title: {
     fontWeight: '700',
   },
-  empty: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
+
+  // Stats
+  statsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
   },
+  statCard: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: colors.background,
+    borderRadius: 14,
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.xs,
+  },
+  statValue: {
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  statLabel: {
+    color: colors.muted,
+    textAlign: 'center',
+  },
+
+  // Lists
   list: {
     gap: spacing.sm,
   },
@@ -189,6 +348,8 @@ const styles = StyleSheet.create({
   sectionLabel: {
     color: colors.muted,
   },
+
+  // Ride cards
   card: {
     backgroundColor: colors.card,
   },
@@ -203,6 +364,55 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: spacing.sm,
   },
+
+  // Repeat ride
+  repeatContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  repeatIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E6F3E8',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  repeatText: {
+    flex: 1,
+  },
+  repeatActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  swapBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#E6F3E8',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  repostChipText: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  returnBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    alignSelf: 'flex-end',
+    marginTop: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  returnBtnText: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+
+  // Request prompt
   requestCardContent: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -217,6 +427,8 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '700',
   },
+
+  // Shared
   muted: {
     color: colors.muted,
     marginTop: 2,
