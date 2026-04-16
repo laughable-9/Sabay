@@ -188,8 +188,7 @@ export default function Profile() {
             mode="outlined"
             icon="logout"
             textColor={colors.danger}
-            onPress={async () => {
-              await resetDemo();
+            onPress={() => {
               dispatch({ type: 'SET_ROLE', role: null });
               router.replace('/');
             }}

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { Button, Card, Chip, Portal, Text } from 'react-native-paper';
+import { Button, Card, Chip, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
 import { hapticSuccess } from '../../utils/haptics';
@@ -245,20 +245,16 @@ export default function RideDetails() {
         </Button>
       </ScrollView>
 
-      <Portal>
-        <ReportDialog
-          visible={reportOpen}
-          targetType="ride"
-          targetId={ride.id}
-          reporterId={currentUser.id}
-          onDismiss={() => setReportOpen(false)}
-          onSubmit={(report) => {
-            dispatch({ type: 'SUBMIT_REPORT', report });
-            setReportOpen(false);
-            Alert.alert('Report submitted', 'Thanks for helping keep Sabay safe. Our team will review this.');
-          }}
-        />
-      </Portal>
+      <ReportDialog
+        visible={reportOpen}
+        targetType="ride"
+        targetId={ride.id}
+        reporterId={currentUser.id}
+        onDismiss={() => setReportOpen(false)}
+        onSubmit={(report) => {
+          dispatch({ type: 'SUBMIT_REPORT', report });
+        }}
+      />
     </>
   );
 }

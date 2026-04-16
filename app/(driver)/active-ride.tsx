@@ -234,18 +234,18 @@ export default function DriverActiveRide() {
           </Dialog.Actions>
         </Dialog>
 
-        <ReportDialog
-          visible={reportOpen}
-          targetType="ride"
-          targetId={ride.id}
-          reporterId={currentUser.id}
-          onDismiss={() => setReportOpen(false)}
-          onSubmit={(report) => {
-            dispatch({ type: 'SUBMIT_REPORT', report });
-            setReportOpen(false);
-          }}
-        />
       </Portal>
+
+      <ReportDialog
+        visible={reportOpen}
+        targetType="ride"
+        targetId={ride.id}
+        reporterId={currentUser.id}
+        onDismiss={() => setReportOpen(false)}
+        onSubmit={(report) => {
+          dispatch({ type: 'SUBMIT_REPORT', report });
+        }}
+      />
     </>
   );
 }
