@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { Button, Card, Chip, Portal, Text } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
 import { hapticSuccess } from '../../utils/haptics';
 import { VerifiedBadge } from '../../components/VerifiedBadge';
@@ -41,7 +42,7 @@ export default function RideDetails() {
 
   if (!ride) {
     return (
-      <View style={styles.container}>
+      <View style={styles.empty}>
         <Stack.Screen options={{ title: 'Ride Details' }} />
         <Text>Ride not found.</Text>
       </View>
@@ -68,11 +69,17 @@ export default function RideDetails() {
   };
 
   const departure = new Date(ride.departureTime);
+  const departureLabel = departure.toLocaleString([], {
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
   return (
     <>
       <Stack.Screen options={{ title: 'Ride Details' }} />
       <ScrollView contentContainerStyle={styles.container}>
+        {/* ── Driver card ── */}
         <Card style={styles.card}>
           <Card.Content>
             <View style={styles.driverCard}>
@@ -82,74 +89,142 @@ export default function RideDetails() {
                 size={56}
               />
               <View style={{ flex: 1 }}>
-                <View style={styles.driverRow}>
-                  <Text variant="titleLarge">{ride.driverFirstName}</Text>
+                <View style={styles.driverNameRow}>
+                  <Text variant="titleLarge" style={styles.driverName}>{ride.driverFirstName}</Text>
                   {ride.driverVerified ? <VerifiedBadge compact /> : null}
                 </View>
                 <View style={styles.chipRow}>
-                  <Chip compact style={styles.licensedChip} textStyle={styles.licensedChipText}>
+                  <Chip compact icon="shield-check" style={styles.licensedChip} textStyle={styles.licensedChipText}>
                     Licensed Driver
                   </Chip>
                 </View>
               </View>
             </View>
-            <Text variant="bodyMedium" style={styles.statsLine}>
-              {ride.driverRating.toFixed(1)} ★ ·{' '}
-              {(ride.driverCompletedRides ?? 0)} rides
-              {ride.driverJoinedAt ? ` · Since ${formatMonthYear(ride.driverJoinedAt)}` : ''}
-            </Text>
-            <Text variant="bodySmall" style={styles.muted}>
-              {ride.vehicle.make} {ride.vehicle.model} · {ride.vehicle.color} · plate{' '}
-              {maskPlate(ride.vehicle.plateNumber)}
-            </Text>
+
+            <View style={styles.driverStatsRow}>
+              <View style={styles.driverStat}>
+                <Text variant="titleMedium" style={styles.statValue}>
+                  {ride.driverRating.toFixed(1)} ★
+                </Text>
+                <Text variant="bodySmall" style={styles.muted}>Rating</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.driverStat}>
+                <Text variant="titleMedium" style={styles.statValue}>
+                  {ride.driverCompletedRides ?? 0}
+                </Text>
+                <Text variant="bodySmall" style={styles.muted}>Rides</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.driverStat}>
+                <Text variant="titleMedium" style={styles.statValue}>
+                  {ride.driverJoinedAt ? formatMonthYear(ride.driverJoinedAt) : '—'}
+                </Text>
+                <Text variant="bodySmall" style={styles.muted}>Joined</Text>
+              </View>
+            </View>
+
+            <View style={styles.vehicleRow}>
+              <MaterialCommunityIcons name="car-side" size={16} color={colors.muted} />
+              <Text variant="bodySmall" style={styles.muted}>
+                {ride.vehicle.make} {ride.vehicle.model} · {ride.vehicle.color} · {maskPlate(ride.vehicle.plateNumber)}
+              </Text>
+            </View>
           </Card.Content>
         </Card>
 
-        <View style={styles.section}>
-          <Text variant="labelLarge" style={styles.label}>
-            Route
-          </Text>
-          <Text variant="titleMedium">
-            {ride.from} → {ride.to}
-          </Text>
-          <Text variant="bodyMedium" style={styles.muted}>
-            {departure.toLocaleString([], {
-              weekday: 'short',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}{' '}
-            · {ride.distanceKm} km · {ride.durationMin} min · {seatsLeft} seat
-            {seatsLeft === 1 ? '' : 's'} left
-          </Text>
-          {ride.notes ? (
-            <Text variant="bodyMedium" style={styles.notes}>
-              “{ride.notes}”
+        {/* ── Route card ── */}
+        <Card style={styles.card}>
+          <Card.Content style={styles.routeCard}>
+            <View style={styles.routeDots}>
+              <View style={styles.greenDot} />
+              <View style={styles.dottedLine} />
+              <View style={styles.redDot} />
+            </View>
+            <View style={styles.routeInfo}>
+              <View>
+                <Text variant="labelSmall" style={styles.muted}>FROM</Text>
+                <Text variant="titleSmall">{ride.from}</Text>
+              </View>
+              <View>
+                <Text variant="labelSmall" style={styles.muted}>TO</Text>
+                <Text variant="titleSmall">{ride.to}</Text>
+              </View>
+            </View>
+          </Card.Content>
+        </Card>
+
+        {/* ── Trip info row ── */}
+        <View style={styles.infoRow}>
+          <View style={styles.infoPill}>
+            <MaterialCommunityIcons name="clock-outline" size={14} color={colors.primary} />
+            <Text variant="labelMedium" style={styles.infoPillText}>{departureLabel}</Text>
+          </View>
+          <View style={styles.infoPill}>
+            <MaterialCommunityIcons name="map-marker-distance" size={14} color={colors.primary} />
+            <Text variant="labelMedium" style={styles.infoPillText}>{ride.distanceKm} km · {ride.durationMin} min</Text>
+          </View>
+          <View style={styles.infoPill}>
+            <MaterialCommunityIcons name="seat-passenger" size={14} color={seatsLeft <= 1 ? colors.danger : colors.primary} />
+            <Text variant="labelMedium" style={[styles.infoPillText, seatsLeft <= 1 && { color: colors.danger }]}>
+              {seatsLeft} seat{seatsLeft === 1 ? '' : 's'} left
             </Text>
-          ) : null}
+          </View>
         </View>
 
-        {breakdown ? (
-          <View style={styles.section}>
-            <Button
-              mode="text"
-              icon={breakdownOpen ? 'chevron-up' : 'chevron-down'}
-              contentStyle={{ flexDirection: 'row-reverse' }}
-              style={styles.breakdownToggle}
-              onPress={() => setBreakdownOpen((v) => !v)}
-            >
-              {breakdownOpen ? 'Hide fare breakdown' : 'Show fare breakdown'}
-            </Button>
-            {breakdownOpen ? <PriceBreakdown breakdown={breakdown} /> : null}
-          </View>
+        {/* ── Notes ── */}
+        {ride.notes ? (
+          <Card style={styles.card}>
+            <Card.Content style={styles.notesContent}>
+              <MaterialCommunityIcons name="format-quote-open" size={16} color={colors.muted} />
+              <Text variant="bodyMedium" style={styles.notesText}>
+                {ride.notes}
+              </Text>
+            </Card.Content>
+          </Card>
         ) : null}
 
+        {/* ── Price ── */}
+        <Card style={styles.priceCard}>
+          <Card.Content>
+            <View style={styles.priceHeader}>
+              <View>
+                <Text variant="labelSmall" style={styles.muted}>YOUR FARE</Text>
+                <Text variant="headlineMedium" style={styles.priceValue}>
+                  {formatPHP(ride.pricePerPerson)}
+                </Text>
+              </View>
+              <Text variant="bodySmall" style={styles.muted}>per person</Text>
+            </View>
+            {breakdown ? (
+              <>
+                <Button
+                  mode="text"
+                  icon={breakdownOpen ? 'chevron-up' : 'chevron-down'}
+                  contentStyle={{ flexDirection: 'row-reverse' }}
+                  compact
+                  style={styles.breakdownToggle}
+                  onPress={() => setBreakdownOpen((v) => !v)}
+                >
+                  {breakdownOpen ? 'Hide breakdown' : 'How is this calculated?'}
+                </Button>
+                {breakdownOpen ? <PriceBreakdown breakdown={breakdown} /> : null}
+              </>
+            ) : null}
+          </Card.Content>
+        </Card>
+
+        {/* ── Safety tips ── */}
         <SafetyTips compact />
 
+        {/* ── Join button ── */}
         <Button
           mode="contained"
           disabled={!canJoin}
           onPress={onJoin}
-          style={styles.submit}
+          style={styles.joinBtn}
+          contentStyle={styles.joinBtnContent}
+          labelStyle={styles.joinBtnLabel}
         >
           {alreadyJoined
             ? 'Already Joined'
@@ -160,7 +235,7 @@ export default function RideDetails() {
 
         <Button
           mode="text"
-          icon="flag"
+          icon="flag-outline"
           textColor={colors.muted}
           compact
           onPress={() => setReportOpen(true)}
@@ -190,22 +265,42 @@ export default function RideDetails() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: spacing.lg,
-    gap: spacing.lg,
-    paddingBottom: spacing.xl,
+    padding: spacing.md,
+    gap: spacing.sm,
+    paddingBottom: spacing.xl * 2,
   },
+  empty: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+
+  // Cards
   card: {
     backgroundColor: colors.card,
+    borderRadius: 14,
   },
+  priceCard: {
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
+  },
+
+  // Driver section
   driverCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
   },
-  driverRow: {
+  driverNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+  },
+  driverName: {
+    fontWeight: '700',
   },
   chipRow: {
     flexDirection: 'row',
@@ -218,33 +313,138 @@ const styles = StyleSheet.create({
   licensedChipText: {
     color: colors.primary,
     fontWeight: '600',
+    fontSize: 11,
   },
-  statsLine: {
+  driverStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.surface,
+  },
+  driverStat: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 2,
+  },
+  statValue: {
+    fontWeight: '700',
     color: colors.text,
-    marginTop: spacing.sm,
   },
-  section: {
+  statDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 28,
+    backgroundColor: colors.surface,
+  },
+  vehicleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.md,
+    paddingTop: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.surface,
+  },
+
+  // Route section
+  routeCard: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  routeDots: {
+    alignItems: 'center',
+    paddingTop: 4,
+    gap: 2,
+  },
+  greenDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.primary,
+  },
+  dottedLine: {
+    width: 2,
+    height: 24,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: colors.muted,
+  },
+  redDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.danger,
+  },
+  routeInfo: {
+    flex: 1,
+    gap: spacing.md,
+  },
+
+  // Info pills
+  infoRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.xs,
   },
-  label: {
-    color: colors.muted,
+  infoPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.card,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: 20,
   },
-  muted: {
-    color: colors.muted,
-    marginTop: spacing.xs,
+  infoPillText: {
+    color: colors.text,
   },
-  notes: {
-    color: colors.muted,
+
+  // Notes
+  notesContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xs,
+  },
+  notesText: {
+    flex: 1,
     fontStyle: 'italic',
-    marginTop: spacing.xs,
+    color: colors.muted,
   },
-  submit: {
-    marginTop: spacing.md,
+
+  // Price
+  priceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+  },
+  priceValue: {
+    color: colors.primary,
+    fontWeight: '800',
+    marginTop: 2,
   },
   breakdownToggle: {
     alignSelf: 'flex-start',
+    marginTop: spacing.xs,
+  },
+
+  // Actions
+  joinBtn: {
+    borderRadius: 12,
+    marginTop: spacing.xs,
+  },
+  joinBtnContent: {
+    paddingVertical: 4,
+  },
+  joinBtnLabel: {
+    fontWeight: '700',
+    fontSize: 16,
   },
   reportBtn: {
     alignSelf: 'center',
+  },
+
+  muted: {
+    color: colors.muted,
   },
 });
