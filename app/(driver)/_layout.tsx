@@ -12,6 +12,14 @@ export default function DriverLayout() {
         headerTitleStyle: { fontWeight: '700' },
         contentStyle: { backgroundColor: theme.colors.background },
       }}
-    />
+    >
+      <Stack.Screen name="home" options={{ title: 'My Rides' }} />
+      <Stack.Screen name="create-ride" options={{ title: 'Create Ride' }} />
+      <Stack.Screen
+        name="active-ride"
+        options={{ title: 'Driving', headerShown: false, gestureEnabled: false }}
+      />
+      <Stack.Screen name="ride-complete" options={{ title: 'Ride Complete', headerBackVisible: false }} />
+    </Stack>
   );
 }
