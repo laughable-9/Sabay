@@ -40,8 +40,8 @@ export function useRideSimulation(ride: Ride | null): SimulatedRide {
 
   const tripPolyline = useMemo(() => {
     if (!ride || !pickupCoord || !destinationCoord) return [];
-    return buildPolylineBetween(ride.id + 'trip', pickupCoord, destinationCoord);
-  }, [ride?.id, pickupCoord, destinationCoord]);
+    return buildPolylineBetween(ride.id + 'trip', pickupCoord, destinationCoord, ride.from, ride.to);
+  }, [ride?.id, ride?.from, ride?.to, pickupCoord, destinationCoord]);
 
   const phase: 'pickup' | 'destination' | 'idle' = useMemo(() => {
     if (!ride) return 'idle';

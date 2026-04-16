@@ -1,4 +1,5 @@
 import type { LocationCoord } from './distance';
+import { getCachedPolyline } from './cachedPolylines';
 
 export type LatLng = LocationCoord;
 
@@ -15,8 +16,15 @@ export function buildPolylineBetween(
   seedId: string,
   start: LatLng,
   end: LatLng,
+  fromName?: string,
+  toName?: string,
   steps = 14,
 ): LatLng[] {
+  if (fromName && toName) {
+    const cached = getCachedPolyline(fromName, toName);
+    if (cached) return cached;
+  }
+
   const seed = hash(seedId);
 
   // If the caller passed identical (or near-identical) coords — usually

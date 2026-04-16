@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -36,22 +36,29 @@ type Step =
 
 /* ─── Constants ─── */
 
-const DESTINATIONS: { key: string; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
-  { key: 'session road', label: 'Session Road', icon: 'road-variant' },
-  { key: 'sm baguio', label: 'SM Baguio', icon: 'shopping' },
-  { key: 'up baguio', label: 'UP Baguio', icon: 'school' },
-  { key: 'la trinidad', label: 'La Trinidad', icon: 'map-marker' },
-  { key: 'slu maryheights', label: 'SLU Maryheights', icon: 'school' },
-  { key: 'baguio cbd', label: 'Baguio CBD', icon: 'city' },
-  { key: 'camp john hay', label: 'Camp John Hay', icon: 'pine-tree' },
-  { key: 'itogon', label: 'Itogon', icon: 'map-marker' },
-  { key: 'tuba', label: 'Tuba', icon: 'map-marker' },
-  { key: 'pinsao proper', label: 'Pinsao Proper', icon: 'home-group' },
-  { key: 'trancoville', label: 'Trancoville', icon: 'map-marker' },
-  { key: 'ambuklao', label: 'Ambuklao', icon: 'map-marker' },
-  { key: 'university of baguio', label: 'University of Baguio', icon: 'school' },
-  { key: 'saint louis university', label: 'Saint Louis University', icon: 'school' },
-  { key: 'university of the cordilleras', label: 'University of the Cordilleras', icon: 'school' },
+type DestCategory = 'Schools' | 'Landmarks' | 'Commercial' | 'Areas';
+type Destination = { key: string; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; category: DestCategory };
+
+const DESTINATIONS: Destination[] = [
+  // Schools
+  { key: 'up baguio', label: 'UP Baguio', icon: 'school', category: 'Schools' },
+  { key: 'slu maryheights', label: 'SLU Maryheights', icon: 'school', category: 'Schools' },
+  { key: 'university of baguio', label: 'University of Baguio', icon: 'school', category: 'Schools' },
+  { key: 'saint louis university', label: 'Saint Louis University', icon: 'school', category: 'Schools' },
+  { key: 'university of the cordilleras', label: 'University of the Cordilleras', icon: 'school', category: 'Schools' },
+  // Landmarks
+  { key: 'session road', label: 'Session Road', icon: 'road-variant', category: 'Landmarks' },
+  { key: 'camp john hay', label: 'Camp John Hay', icon: 'pine-tree', category: 'Landmarks' },
+  // Commercial
+  { key: 'sm baguio', label: 'SM Baguio', icon: 'shopping', category: 'Commercial' },
+  { key: 'baguio cbd', label: 'Baguio CBD', icon: 'city', category: 'Commercial' },
+  // Areas
+  { key: 'la trinidad', label: 'La Trinidad', icon: 'map-marker', category: 'Areas' },
+  { key: 'itogon', label: 'Itogon', icon: 'map-marker', category: 'Areas' },
+  { key: 'tuba', label: 'Tuba', icon: 'map-marker', category: 'Areas' },
+  { key: 'pinsao proper', label: 'Pinsao Proper', icon: 'home-group', category: 'Areas' },
+  { key: 'trancoville', label: 'Trancoville', icon: 'map-marker', category: 'Areas' },
+  { key: 'ambuklao', label: 'Ambuklao', icon: 'map-marker', category: 'Areas' },
 ];
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -85,7 +92,13 @@ const MAP_STYLE = [
   { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#9e9e9e' }] },
 ];
 
-const QUICK_CHIPS = DESTINATIONS.slice(0, 5);
+const QUICK_CHIPS = [
+  DESTINATIONS.find((d) => d.key === 'up baguio')!,
+  DESTINATIONS.find((d) => d.key === 'session road')!,
+  DESTINATIONS.find((d) => d.key === 'sm baguio')!,
+  DESTINATIONS.find((d) => d.key === 'la trinidad')!,
+  DESTINATIONS.find((d) => d.key === 'camp john hay')!,
+];
 
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -446,14 +459,15 @@ export function RiderHomeContent() {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            {query.trim().length === 0 && (
-              <Text variant="labelLarge" style={styles.sectionTitle}>
-                Popular destinations
-              </Text>
-            )}
-            {filteredDestinations.map((dest) => (
+            {filteredDestinations.map((dest, i) => (
+              <React.Fragment key={dest.key}>
+                {query.trim().length === 0 &&
+                  (i === 0 || filteredDestinations[i - 1].category !== dest.category) && (
+                    <Text variant="labelLarge" style={styles.sectionTitle}>
+                      {dest.category}
+                    </Text>
+                  )}
               <Pressable
-                key={dest.key}
                 style={styles.destRow}
                 onPress={() => selectDestination(dest.key, dest.label)}
               >
@@ -464,6 +478,7 @@ export function RiderHomeContent() {
                   <Text variant="bodyLarge">{dest.label}</Text>
                 </View>
               </Pressable>
+              </React.Fragment>
             ))}
             {filteredDestinations.length === 0 && (
               <View style={styles.emptyDest}>
