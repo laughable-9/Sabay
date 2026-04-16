@@ -49,6 +49,9 @@ const DESTINATIONS: { key: string; label: string; icon: keyof typeof MaterialCom
   { key: 'pinsao proper', label: 'Pinsao Proper', icon: 'home-group' },
   { key: 'trancoville', label: 'Trancoville', icon: 'map-marker' },
   { key: 'ambuklao', label: 'Ambuklao', icon: 'map-marker' },
+  { key: 'university of baguio', label: 'University of Baguio', icon: 'school' },
+  { key: 'saint louis university', label: 'Saint Louis University', icon: 'school' },
+  { key: 'university of the cordilleras', label: 'University of the Cordilleras', icon: 'school' },
 ];
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');

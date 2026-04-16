@@ -8,18 +8,21 @@ export type LocationCoord = {
 // Approximate centroids for common Baguio/Benguet landmarks. Good enough for
 // map-region fitting and polyline endpoints in the demo.
 const LOCATION_COORDS: Record<string, LocationCoord> = {
-  'la trinidad': { latitude: 16.4565, longitude: 120.5876 },
-  'up baguio': { latitude: 16.3816, longitude: 120.6169 },
-  'session road': { latitude: 16.413, longitude: 120.594 },
-  'sm baguio': { latitude: 16.4141, longitude: 120.5936 },
-  'slu maryheights': { latitude: 16.3987, longitude: 120.5969 },
-  'itogon': { latitude: 16.3625, longitude: 120.6781 },
-  'baguio cbd': { latitude: 16.4115, longitude: 120.5935 },
-  'tuba': { latitude: 16.3392, longitude: 120.5725 },
-  'camp john hay': { latitude: 16.4031, longitude: 120.6055 },
-  'ambuklao': { latitude: 16.4639, longitude: 120.7906 },
-  'pinsao proper': { latitude: 16.4212, longitude: 120.5783 },
+  'la trinidad': { latitude: 16.431417, longitude: 120.598472 },
+  'up baguio': { latitude: 16.40534951342546, longitude: 120.5986366159475 },
+  'session road': { latitude: 16.412517222470743, longitude: 120.59756914670676 },
+  'sm baguio': { latitude: 16.408992340980454, longitude: 120.59985539466223 },
+  'slu maryheights': { latitude: 16.385338211915762, longitude: 120.59329935532173 },
+  'itogon': { latitude: 16.384929674904427, longitude: 120.61513206127269 },
+  'baguio cbd': { latitude: 16.412459772743315, longitude: 120.59333237703157 },
+  'tuba': { latitude: 16.38785618118749, longitude: 120.57221567629415 },
+  'camp john hay': { latitude: 16.399195714365174, longitude: 120.60767228081079 },
+  'ambuklao': { latitude: 16.41968997359677, longitude: 120.62696154193758 },
+  'pinsao proper': { latitude: 16.410816652323234, longitude: 120.57959279439551 },
   'trancoville': { latitude: 16.4221, longitude: 120.5974 },
+  'university of baguio': { latitude: 16.415299459419607, longitude: 120.5974832167377 },
+  'saint louis university': { latitude: 16.41916123773753, longitude: 120.59712793643583 },
+  'university of the cordilleras': { latitude: 16.408750613668907, longitude: 120.59790681749976 },
 };
 
 const CACHED_ROUTES: Record<string, { distanceKm: number; durationMin: number }> = {
