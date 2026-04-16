@@ -53,6 +53,35 @@ export function getCoord(name: string): LocationCoord {
   return LOCATION_COORDS[normalize(name)] ?? BAGUIO_CENTER;
 }
 
+/** Haversine distance in km between two coordinates. */
+function haversineKm(a: LocationCoord, b: LocationCoord): number {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(b.latitude - a.latitude);
+  const dLon = toRad(b.longitude - a.longitude);
+  const sinLat = Math.sin(dLat / 2);
+  const sinLon = Math.sin(dLon / 2);
+  const h =
+    sinLat * sinLat +
+    Math.cos(toRad(a.latitude)) * Math.cos(toRad(b.latitude)) * sinLon * sinLon;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+/**
+ * Returns true if `waypoint` is roughly on the way from `from` to `to`.
+ * Uses the triangle-inequality detour check: if going from→waypoint→to adds
+ * no more than 30% extra distance compared to from→to, it's "on the way".
+ */
+export function isOnTheWay(from: string, waypoint: string, to: string): boolean {
+  const a = getCoord(from);
+  const w = getCoord(waypoint);
+  const b = getCoord(to);
+  const direct = haversineKm(a, b);
+  if (direct < 0.5) return false; // same place
+  const detour = haversineKm(a, w) + haversineKm(w, b);
+  return detour <= direct * 1.3;
+}
+
 export function estimateDistance(from: string, to: string): DistanceEstimate {
   const a = normalize(from);
   const b = normalize(to);
