@@ -82,6 +82,15 @@ const MAP_STYLE = [
   { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#9e9e9e' }] },
 ];
 
+const QUICK_CHIPS = DESTINATIONS.slice(0, 5);
+
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
 /* ─── Main Component ─── */
 
 export function RiderHomeContent() {
@@ -105,12 +114,6 @@ export function RiderHomeContent() {
       .filter((r) => r.status === 'open')
       .filter((r) => r.passengers.length < r.totalSeats);
   }, [state.rides, currentUser.id]);
-
-  // Rides departing within 30 min (shown as car icons on idle map)
-  const soonRides = useMemo(() => {
-    const now = Date.now();
-    return openRides.filter((r) => r.departureTime - now <= 30 * 60 * 1000 && r.departureTime > now);
-  }, [openRides]);
 
   // Filtered destinations for autocomplete
   const filteredDestinations = useMemo(() => {
@@ -237,7 +240,11 @@ export function RiderHomeContent() {
         loadingEnabled
         customMapStyle={MAP_STYLE}
         onPress={() => {
-          if (previewRide) hidePreview();
+          if (previewRide) {
+            hidePreview();
+          } else if (step.kind === 'browse') {
+            goBack();
+          }
         }}
       >
         {/* User location dot */}
@@ -249,21 +256,6 @@ export function RiderHomeContent() {
             <View style={styles.userDotInner} />
           </View>
         </Marker>
-
-        {/* Idle: rides leaving within 30 min as car markers */}
-        {step.kind === 'idle' &&
-          soonRides.map((ride) => (
-            <Marker
-              key={ride.id}
-              coordinate={getCoord(ride.from)}
-              anchor={{ x: 0.5, y: 0.5 }}
-              onPress={() => showPreview(ride)}
-            >
-              <View style={styles.carMarker}>
-                <MaterialCommunityIcons name="car-side" size={22} color={colors.card} />
-              </View>
-            </Marker>
-          ))}
 
         {/* Browse: exact ride car markers */}
         {isBrowsing &&
@@ -305,7 +297,7 @@ export function RiderHomeContent() {
         )}
       </MapView>
 
-      {/* ─── IDLE: compact bottom bar (animated) ─── */}
+      {/* ─── IDLE: bottom panel (animated) ─── */}
       <Animated.View
         style={[
           styles.compactBar,
@@ -315,7 +307,7 @@ export function RiderHomeContent() {
               {
                 translateY: compactAnim.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [120, 0],
+                  outputRange: [300, 0],
                 }),
               },
             ],
@@ -324,12 +316,80 @@ export function RiderHomeContent() {
         ]}
         pointerEvents={step.kind === 'idle' ? 'auto' : 'none'}
       >
+        {/* Greeting + ride count */}
+        <View style={styles.greetingRow}>
+          <View>
+            <Text variant="titleMedium" style={styles.greetingText}>
+              {getGreeting()}, {currentUser.firstName}
+            </Text>
+            <Text variant="bodySmall" style={styles.muted}>
+              {openRides.length} ride{openRides.length === 1 ? '' : 's'} available nearby
+            </Text>
+          </View>
+          <View style={styles.rideBadge}>
+            <MaterialCommunityIcons name="car-multiple" size={16} color={colors.primary} />
+            <Text variant="labelMedium" style={styles.rideBadgeText}>
+              {openRides.length}
+            </Text>
+          </View>
+        </View>
+
+        {/* Search bar */}
         <Pressable style={styles.fakeSearchRow} onPress={openSearch}>
           <MaterialCommunityIcons name="magnify" size={20} color={colors.muted} />
           <Text variant="bodyLarge" style={styles.fakeSearchText}>
             Where are you heading?
           </Text>
         </Pressable>
+
+        {/* Quick-access destination chips */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipScroll}
+        >
+          {QUICK_CHIPS.map((dest) => (
+            <Pressable
+              key={dest.key}
+              style={styles.quickChip}
+              onPress={() => selectDestination(dest.key, dest.label)}
+            >
+              <MaterialCommunityIcons name={dest.icon} size={14} color={colors.primary} />
+              <Text variant="labelMedium" style={styles.quickChipText}>
+                {dest.label}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+
+        {/* Active request banners */}
+        {activeRequests.map((req) => (
+          <Pressable
+            key={req.id}
+            style={styles.requestBanner}
+            onPress={() => {
+              const dest = DESTINATIONS.find((d) => d.key === req.to.toLowerCase());
+              if (dest) {
+                selectDestination(dest.key, dest.label);
+              } else {
+                selectDestination(req.to.toLowerCase(), req.to);
+              }
+            }}
+          >
+            <View style={styles.requestBannerIcon}>
+              <MaterialCommunityIcons name="hand-wave" size={16} color={colors.card} />
+            </View>
+            <View style={styles.requestBannerText}>
+              <Text variant="labelLarge" numberOfLines={1}>
+                {req.from} → {req.to}
+              </Text>
+              <Text variant="bodySmall" style={styles.muted}>
+                {formatDepartureTime(req.desiredDepartureTime)} · Waiting for a driver
+              </Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={20} color={colors.muted} />
+          </Pressable>
+        ))}
       </Animated.View>
 
       {/* ─── SEARCHING: full-screen overlay (animated) ─── */}
@@ -694,7 +754,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // ── Idle: compact bottom bar ──
+  // ── Idle: bottom panel ──
   compactBar: {
     position: 'absolute',
     bottom: 0,
@@ -704,12 +764,34 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.md,
+    gap: spacing.sm,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.12,
     shadowRadius: 8,
+  },
+  greetingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  greetingText: {
+    fontWeight: '700',
+  },
+  rideBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#E6F3E8',
+    borderRadius: 12,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  rideBadgeText: {
+    color: colors.primary,
+    fontWeight: '700',
   },
   fakeSearchRow: {
     flexDirection: 'row',
@@ -722,6 +804,40 @@ const styles = StyleSheet.create({
   },
   fakeSearchText: {
     color: colors.muted,
+    flex: 1,
+  },
+  chipScroll: {
+    gap: spacing.sm,
+  },
+  quickChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.background,
+    borderRadius: 20,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs + 2,
+  },
+  quickChipText: {
+    color: colors.text,
+  },
+  requestBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: spacing.sm,
+  },
+  requestBannerIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  requestBannerText: {
     flex: 1,
   },
 
